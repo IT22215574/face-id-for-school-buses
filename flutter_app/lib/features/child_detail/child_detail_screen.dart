@@ -56,7 +56,7 @@ class _TimelineItem extends StatelessWidget {
     return ListTile(
       leading: CircleAvatar(
         backgroundColor: isPositive ? Colors.green.shade100 : Colors.orange.shade100,
-        child: Icon(isPositive ? Icons.boarding : Icons.home, color: isPositive ? Colors.green : Colors.orange),
+        child: Icon(isPositive ? Icons.directions_bus : Icons.home, color: isPositive ? Colors.green : Colors.orange),
       ),
       title: Text(title),
       subtitle: Text(subtitle),

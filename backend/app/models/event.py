@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
+from enum import Enum as PyEnum
 from typing import TYPE_CHECKING
 
-from sqlalchemy import Enum, Float, ForeignKey, String
+from sqlalchemy import Enum as SAEnum, Float, ForeignKey, String
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.db.base import Base
@@ -11,7 +12,7 @@ if TYPE_CHECKING:
     from app.models.student import Student
 
 
-class EventType(str, Enum):
+class EventType(str, PyEnum):
     BOARDED = "BOARDED"
     ALIGHTED = "ALIGHTED"
 
@@ -22,7 +23,7 @@ class Event(Base):
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     student_id: Mapped[int] = mapped_column(ForeignKey("students.id"), nullable=False, index=True)
     bus_id: Mapped[int] = mapped_column(ForeignKey("buses.id"), nullable=False, index=True)
-    event_type: Mapped[EventType] = mapped_column(Enum(EventType), nullable=False)
+    event_type: Mapped[EventType] = mapped_column(SAEnum(EventType), nullable=False)
     event_time: Mapped[datetime] = mapped_column(nullable=False)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
