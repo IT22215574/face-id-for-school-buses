@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../providers/auth_provider.dart';
 import '../auth/login_screen.dart';
+import '../dashboard/dashboard_screen.dart';
 
 class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
@@ -31,8 +32,9 @@ class SettingsScreen extends ConsumerWidget {
             onTap: () async {
               await ref.read(authStateProvider.notifier).logout();
               if (context.mounted) {
+                final destination = disableSignInPageForNow ? const DashboardScreen() : const LoginScreen();
                 Navigator.of(context).pushAndRemoveUntil(
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
+                  MaterialPageRoute(builder: (_) => destination),
                   (route) => false,
                 );
               }

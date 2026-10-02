@@ -13,15 +13,17 @@ class SplashScreen extends ConsumerWidget {
     final isAuthenticated = ref.watch(authStateProvider);
 
     Future.microtask(() {
-      if (isAuthenticated) {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const DashboardScreen()),
-        );
-      } else {
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (_) => const LoginScreen()),
-        );
-      }
+      if (!context.mounted) return;
+
+      final shouldBypassLogin = disableSignInPageForNow || isAuthenticated;
+
+      if (!context.mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => shouldBypassLogin ? const DashboardScreen() : const LoginScreen(),
+        ),
+      );
     });
 
     return const Scaffold(
