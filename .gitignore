@@ -1,0 +1,27 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+.env
+.env.*
+.pytest_cache/
+.mypy_cache/
+*.sqlite3
+.idea/
+.vscode/
+.DS_Store
+build/
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-ide
+
+# Flutter
+flutter_app/.dart_tool/
+flutter_app/.packages
+flutter_app/.pub-cache/
+flutter_app/.pub/
+flutter_app/build/
+flutter_app/ios/Pods/
+flutter_app/android/.gradle/

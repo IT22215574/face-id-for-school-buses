@@ -1,0 +1,12 @@
+.git
+.gitignore
+.vscode
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.env
+.flutter-plugins
+.flutter-plugins-dependencies
+.flutter-ide
+flutter_app/build

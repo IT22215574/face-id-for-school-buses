@@ -1,0 +1,48 @@
+{
+  "info": {
+    "name": "School Bus Parent App API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"name\": \"Jane Parent\",\n  \"phone\": \"+15550001111\",\n  \"email\": \"parent@example.com\",\n  \"password\": \"password123\"\n}"
+        },
+        "url": {"raw": "http://localhost:8000/auth/register", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["auth", "register"]}
+      }
+    },
+    {
+      "name": "Auth Login",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "body": {"mode": "raw", "raw": "{\n  \"email\": \"parent@example.com\",\n  \"password\": \"password123\"\n}"},
+        "url": {"raw": "http://localhost:8000/auth/login", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["auth", "login"]}
+      }
+    },
+    {
+      "name": "Get My Students",
+      "request": {"method": "GET", "url": {"raw": "http://localhost:8000/me/students", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["me", "students"]}}
+    },
+    {
+      "name": "Device Event Ingestion",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "x-api-key", "value": "demo-device-key"}
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"student_id\": 1,\n  \"bus_id\": 1,\n  \"event_type\": \"BOARDED\",\n  \"event_time\": \"2026-10-02T07:42:00Z\",\n  \"lat\": 6.9271,\n  \"lng\": 79.8612,\n  \"confidence\": 0.98\n}"
+        },
+        "url": {"raw": "http://localhost:8000/device/events", "protocol": "http", "host": ["localhost"], "port": "8000", "path": ["device", "events"]}
+      }
+    }
+  ]
+}
