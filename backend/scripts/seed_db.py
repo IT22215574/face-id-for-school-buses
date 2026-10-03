@@ -4,12 +4,14 @@ from app.core.security import hash_api_key, hash_password
 from app.db.init_db import create_all_tables
 from app.db.session import SessionLocal
 from app.models.bus import Bus
+from app.models.bus_location import BusLocation
 from app.models.device import Device
+from app.models.emergency import EmergencyContact
+from app.models.event import Event, EventType
 from app.models.parent import Parent
 from app.models.parent_student import ParentStudent
+from app.models.payroll import Driver, DriverAttendance, DriverPayProfile, PayPeriod, Trip
 from app.models.student import Student
-from app.models.bus_location import BusLocation
-from app.models.event import Event, EventType
 
 
 def seed() -> None:
@@ -29,6 +31,19 @@ def seed() -> None:
         db.commit()
         db.refresh(admin)
 
+    coordinator = db.query(Parent).filter(Parent.email == "coordinator@example.com").first()
+    if not coordinator:
+        coordinator = Parent(
+            name="School Coordinator",
+            phone="+15550000001",
+            email="coordinator@example.com",
+            password_hash=hash_password("coord123"),
+            role="COORDINATOR",
+        )
+        db.add(coordinator)
+        db.commit()
+        db.refresh(coordinator)
+
     parent = db.query(Parent).filter(Parent.email == "parent@example.com").first()
     if not parent:
         parent = Parent(
@@ -42,6 +57,19 @@ def seed() -> None:
         db.add(parent)
         db.commit()
         db.refresh(parent)
+
+    driver_user = db.query(Parent).filter(Parent.email == "driver@example.com").first()
+    if not driver_user:
+        driver_user = Parent(
+            name="Sam Driver",
+            phone="+15550001112",
+            email="driver@example.com",
+            password_hash=hash_password("driver123"),
+            role="DRIVER",
+        )
+        db.add(driver_user)
+        db.commit()
+        db.refresh(driver_user)
 
     student = db.query(Student).filter(Student.name == "Aisha").first()
     if not student:
@@ -67,6 +95,10 @@ def seed() -> None:
         device = Device(bus_id=bus.id, api_key_hash=hash_api_key("demo-device-key"), status="ACTIVE")
         db.add(device)
         db.commit()
+
+    if not db.query(EmergencyContact).filter(EmergencyContact.name == "School Safety Desk").first():
+        db.add(EmergencyContact(school_id="SCH-001", name="School Safety Desk", phone="+15550009999", role="COORDINATOR", priority_order=1))
+        db.add(EmergencyContact(school_id="SCH-001", name="Transport Manager", phone="+15550009998", role="COORDINATOR", priority_order=2))
 
     location = db.query(BusLocation).filter(BusLocation.bus_id == bus.id).order_by(BusLocation.server_time.desc()).first()
     if not location:
@@ -94,6 +126,65 @@ def seed() -> None:
                 lng=79.8612,
                 confidence=0.99,
                 source="DEVICE",
+            )
+        )
+
+    driver = db.query(Driver).filter(Driver.user_id == driver_user.id).first()
+    if not driver:
+        driver = Driver(
+            user_id=driver_user.id,
+            name="Sam Driver",
+            phone=driver_user.phone,
+            license_no="DL-112233",
+            nic="200012345V",
+            bus_id=bus.id,
+            status="ACTIVE",
+        )
+        db.add(driver)
+        db.commit()
+        db.refresh(driver)
+
+    if not db.query(DriverPayProfile).filter(DriverPayProfile.driver_id == driver.id).first():
+        db.add(
+            DriverPayProfile(
+                driver_id=driver.id,
+                pay_type="MONTHLY_SALARY",
+                base_salary=80000,
+                per_trip_rate=1200,
+                per_km_rate=150,
+                overtime_rate=250,
+                bank_name="People's Bank",
+                bank_account_no_encrypted="",
+            )
+        )
+
+    if not db.query(PayPeriod).filter(PayPeriod.month == datetime.now(timezone.utc).month, PayPeriod.year == datetime.now(timezone.utc).year).first():
+        db.add(PayPeriod(month=datetime.now(timezone.utc).month, year=datetime.now(timezone.utc).year, status="OPEN"))
+
+    if not db.query(Trip).filter(Trip.driver_id == driver.id).first():
+        start = datetime.now(timezone.utc).replace(day=1, hour=7, minute=0, second=0, microsecond=0)
+        db.add(
+            Trip(
+                bus_id=bus.id,
+                driver_id=driver.id,
+                route_name="North Loop",
+                shift="MORNING",
+                start_time=start,
+                end_time=start.replace(hour=9),
+                distance_km=42.5,
+                status="COMPLETED",
+            )
+        )
+
+    if not db.query(DriverAttendance).filter(DriverAttendance.driver_id == driver.id).first():
+        day = datetime.now(timezone.utc).replace(day=1, hour=8, minute=0, second=0, microsecond=0)
+        db.add(
+            DriverAttendance(
+                driver_id=driver.id,
+                date=day,
+                check_in=day.replace(hour=6, minute=30),
+                check_out=day.replace(hour=15, minute=15),
+                status="PRESENT",
             )
         )
 

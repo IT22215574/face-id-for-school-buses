@@ -17,6 +17,11 @@ class Settings(BaseSettings):
     TWILIO_FROM_NUMBER: str = ""
     GOOGLE_MAPS_API_KEY: str = ""
     REDIS_URL: str = "redis://localhost:6379/0"
+    EMERGENCY_ESCALATION_SECONDS: int = 60
+    OVERSPEED_LIMIT_KMH: float = 80.0
+    NO_GPS_THRESHOLD_SECONDS: int = 120
+    ENCRYPTION_KEY: str = "9P8wGvM9W8L8V1CXU5B1rpD7hN4Vs0w2xKm8aJZfVwY="
+    CURRENCY: str = "LKR"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True)
 

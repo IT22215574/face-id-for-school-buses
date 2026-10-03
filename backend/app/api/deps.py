@@ -24,3 +24,15 @@ def require_admin(current_parent=Depends(get_current_parent)):
     if current_parent.role != "ADMIN":
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin access required")
     return current_parent
+
+
+def require_admin_or_coordinator(current_parent=Depends(get_current_parent)):
+    if current_parent.role not in {"ADMIN", "COORDINATOR"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Admin or coordinator access required")
+    return current_parent
+
+
+def require_finance_or_admin(current_parent=Depends(get_current_parent)):
+    if current_parent.role not in {"ADMIN", "FINANCE"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Finance access required")
+    return current_parent
