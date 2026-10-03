@@ -16,6 +16,7 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def create_session():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
     db = SessionLocal()
     return db
@@ -79,8 +80,8 @@ def test_payroll_calculation_matches_manual_formula():
             advance_deduction=Decimal("1000.00"),
             penalty_deduction=Decimal("0.00"),
             other_deduction=Decimal("0.00"),
-            gross=Decimal("54500.00"),
-            net=Decimal("53500.00"),
+            gross=Decimal("55500.00"),
+            net=Decimal("54500.00"),
             status="DRAFT",
         )
         db.add(record)

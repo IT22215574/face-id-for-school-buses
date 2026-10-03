@@ -6,7 +6,7 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     APP_ENV: Literal["development", "production", "test"] = "development"
-    DATABASE_URL: str = "postgresql+psycopg://schoolbus:schoolbus@localhost:5432/schoolbus"
+    DATABASE_URL: str = "sqlite:///./schoolbus.db"
     JWT_SECRET: str = "change-me-in-production"
     JWT_ACCESS_EXPIRE_MIN: int = 30
     JWT_REFRESH_EXPIRE_DAYS: int = 30

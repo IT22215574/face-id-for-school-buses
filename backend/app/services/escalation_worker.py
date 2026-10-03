@@ -8,13 +8,24 @@ from app.models.emergency import EmergencyAlert, EmergencyContact, EmergencyNoti
 from app.models.parent import Parent
 
 
+def _to_utc(value: datetime | None) -> datetime | None:
+    if value is None:
+        return None
+    if value.tzinfo is None:
+        return value.replace(tzinfo=timezone.utc)
+    return value.astimezone(timezone.utc)
+
+
 def escalate_unacknowledged_alerts(db: Session, escalation_seconds: int = 60) -> list[int]:
     alerts = db.query(EmergencyAlert).filter(EmergencyAlert.status.in_(["OPEN", "RESPONDING"]))
     escalated_ids: list[int] = []
     for alert in alerts:
         if alert.acknowledged_at is not None:
             continue
-        if datetime.now(timezone.utc) - alert.created_at < timedelta(seconds=escalation_seconds):
+        created_at = _to_utc(alert.created_at)
+        if created_at is None:
+            continue
+        if datetime.now(timezone.utc) - created_at < timedelta(seconds=escalation_seconds):
             continue
         attempts = db.query(EmergencyNotification).filter(EmergencyNotification.alert_id == alert.id).count()
         if attempts == 0:

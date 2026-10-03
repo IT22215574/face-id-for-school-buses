@@ -15,8 +15,9 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 
 def test_escalation_creates_notification_after_threshold():
-    db = SessionLocal()
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
+    db = SessionLocal()
     try:
         admin = Parent(name="Admin", phone="+10000000010", email="adminescalate@example.com", password_hash="x", role="ADMIN")
         db.add(admin)
