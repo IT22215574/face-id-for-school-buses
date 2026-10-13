@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
 import '../auth/sign_out.dart';
-import '../map/map_screen.dart';
+import '../map/live_map_screen.dart';
 import '../transport/student_screens.dart';
 import '../transport/transport_state.dart';
 
@@ -41,18 +41,25 @@ class DriverScreen extends ConsumerWidget {
                           child: Column(children: [
                             Row(children: [
                               const Expanded(
-                                  child: Text('Route',
+                                  child: Text('Live bus location',
                                       style: TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold))),
                               TextButton(
                                   onPressed: () => openScreen(
-                                      context, const MapScreen(driver: true)),
+                                      context, const LiveMapScreen()),
                                   child: const Text('View'))
                             ]),
-                            BusMapPreview(
-                                onTap: () => openScreen(
-                                    context, const MapScreen(driver: true))),
+                            BusCard(
+                                child: ListTile(
+                              leading: const Icon(Icons.map, color: busBlue),
+                              title: const Text('Track your bus on the map'),
+                              subtitle: const Text(
+                                  'Share GPS from your phone during your trip'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  openScreen(context, const LiveMapScreen()),
+                            )),
                             const SizedBox(height: 24),
                             SizedBox(
                                 width: double.infinity,
