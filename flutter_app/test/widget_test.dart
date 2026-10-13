@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:school_bus_parent_app/app.dart';
+import 'package:school_bus_parent_app/features/transport/role_screen.dart';
 import 'package:school_bus_parent_app/features/dashboard/dashboard_screen.dart';
 import 'package:school_bus_parent_app/features/driver/driver_screen.dart';
 import 'package:school_bus_parent_app/features/map/map_screen.dart';
@@ -15,6 +16,10 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(const ProviderScope(child: SchoolBusParentApp()));
+    await tester.pumpAndSettle();
+    final theme = Theme.of(tester.element(find.text('School Bus Sign In')));
+    await tester.pumpWidget(ProviderScope(
+        child: MaterialApp(theme: theme, home: const RoleScreen())));
     await tester.pumpAndSettle();
   }
 

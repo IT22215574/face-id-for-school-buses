@@ -38,7 +38,7 @@ void main() {
     await tester.pumpWidget(ProviderScope(
         child: RepaintBoundary(key: key, child: const SchoolBusParentApp())));
     await tester.pumpAndSettle();
-    final theme = Theme.of(tester.element(find.text('Parent')));
+    final theme = Theme.of(tester.element(find.text('School Bus Sign In')));
     final screens = <String, Widget>{
       'parent-home': const DashboardScreen(),
       'driver-home': const DriverScreen(),

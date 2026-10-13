@@ -1,46 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-
 import 'login_screen.dart';
-import '../transport/role_screen.dart';
-import '../../providers/auth_provider.dart';
 
-class SplashScreen extends ConsumerWidget {
+class SplashScreen extends StatelessWidget {
   const SplashScreen({super.key});
-
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isAuthenticated = ref.watch(authStateProvider);
-
-    Future.microtask(() {
-      if (!context.mounted) return;
-
-      final shouldBypassLogin = disableSignInPageForNow || isAuthenticated;
-
-      if (!context.mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) =>
-              shouldBypassLogin ? const RoleScreen() : const LoginScreen(),
-        ),
-      );
-    });
-
-    return const Scaffold(
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.directions_bus, size: 96, color: Colors.blue),
-            SizedBox(height: 20),
-            Text('School Bus Parent App',
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            SizedBox(height: 16),
-            CircularProgressIndicator(),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => const LoginScreen();
 }

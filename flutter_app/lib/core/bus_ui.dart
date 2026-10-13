@@ -92,7 +92,7 @@ class BusBottomBar extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                     children: [
                       IconButton(
-                          tooltip: onSwitch == null ? 'Back' : 'Switch role',
+                          tooltip: onSwitch == null ? 'Back' : 'Sign out',
                           onPressed: onSwitch ??
                               () => Navigator.of(context).maybePop(),
                           icon: const DesignAsset('80ba2.svg',

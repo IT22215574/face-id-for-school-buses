@@ -25,3 +25,6 @@ flutter_app/.pub/
 flutter_app/build/
 flutter_app/ios/Pods/
 flutter_app/android/.gradle/
+
+# Local development database
+backend/schoolbus.db

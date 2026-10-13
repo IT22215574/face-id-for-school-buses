@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
+import '../auth/sign_out.dart';
 import '../map/map_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../transport/student_screens.dart';
@@ -117,10 +118,8 @@ class DashboardScreen extends ConsumerWidget {
                               const SizedBox(height: 24),
                             ])),
                   ]))))),
-      bottomNavigationBar: BusBottomBar(
-          onHome: () {},
-          onSwitch: () =>
-              Navigator.of(context).popUntil((route) => route.isFirst)),
+      bottomNavigationBar:
+          BusBottomBar(onHome: () {}, onSwitch: () => signOut(context, ref)),
     );
   }
 }

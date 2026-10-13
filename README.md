@@ -53,7 +53,7 @@ The backend is organized as:
 
 5. Seed demo data:
    ```bash
-   python scripts/seed_db.py
+   PYTHONPATH=. python scripts/seed_db.py
    ```
 
 6. Run the API:
@@ -108,3 +108,24 @@ flutter run
 - Store FCM credentials as secure secret material.
 - Configure Twilio and Google Maps keys in the production environment.
 - Add additional operational monitoring, log retention, and rate limiting policies as needed.
+
+## Parent and driver development credentials
+
+The seed command creates these local demo accounts:
+
+| Account | Email | Password |
+| --- | --- | --- |
+| Parent | parent@example.com | password123 |
+| Driver | driver@example.com | driver123 |
+
+These accounts have been created in the local SQLite database at `backend/schoolbus.db`. Start the API from `backend/` with `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`. Docker/Postgres uses a separate database: run `docker compose exec api python -m scripts.seed_db` after starting that stack to create the same demo accounts there.
+
+The Flutter sign-in screen authenticates through `/auth/login` and obtains the server-authorized role through `/parents/me`. Parent accounts open child selection; driver accounts open the driver dashboard. Use **Sign out** on either dashboard to log in with another account. Transport screen data remains a UI preview.
+
+For a physical phone, use the development computer's LAN address:
+
+```sh
+flutter run --dart-define=API_BASE_URL=http://YOUR_COMPUTER_IP:8000
+```
+
+The default API address is `http://localhost:8000`. Android emulators usually require `http://10.0.2.2:8000`. The demo credentials are for local development.
