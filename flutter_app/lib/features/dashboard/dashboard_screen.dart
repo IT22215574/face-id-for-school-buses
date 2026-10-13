@@ -17,79 +17,39 @@ class DashboardScreen extends ConsumerWidget {
     return Scaffold(
       body: SafeArea(
           top: false,
-          child: Center(
+          child: Align(
+              alignment: Alignment.topCenter,
               child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 600),
                   child: SingleChildScrollView(
                       child: Column(children: [
-                    SizedBox(
-                        height: 278,
-                        child: Stack(children: [
-                          Container(
-                              height: 210,
-                              decoration: const BoxDecoration(
-                                  color: busBlue,
-                                  borderRadius: BorderRadius.vertical(
-                                      bottom: Radius.circular(20)),
-                                  boxShadow: [
-                                    BoxShadow(
-                                        color: Color(0x33000000),
-                                        blurRadius: 4,
-                                        offset: Offset(0, 4))
-                                  ])),
-                          Positioned(
-                              top: 28 + MediaQuery.paddingOf(context).top,
-                              right: 38,
-                              child: IconButton(
-                                  tooltip: 'Notifications',
-                                  onPressed: () => openScreen(
-                                      context, const NotificationsScreen()),
-                                  icon: const DesignAsset('29a4b.svg',
-                                      width: 27, height: 27))),
-                          Positioned(
-                              top: 105,
-                              left: 42,
-                              right: 42,
-                              child: BusCard(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 25, vertical: 24),
-                                  child: SizedBox(
-                                      height: 108,
-                                      child: Row(children: [
-                                        const ProfileAvatar(),
-                                        const SizedBox(width: 28),
-                                        Expanded(
-                                            child: Column(
-                                                mainAxisAlignment:
-                                                    MainAxisAlignment.center,
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: [
-                                              Text(student.name,
-                                                  style: const TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 15)),
-                                              Text(student.grade,
-                                                  style: const TextStyle(
-                                                      color: Colors.black,
-                                                      fontSize: 15)),
-                                              InkWell(
-                                                  onTap: () => openScreen(
-                                                      context,
-                                                      const SelectChildScreen()),
-                                                  child: const Padding(
-                                                      padding:
-                                                          EdgeInsets.symmetric(
-                                                              vertical: 8),
-                                                      child: Text(
-                                                          'Switch child  ▾',
-                                                          style: TextStyle(
-                                                              fontSize: 12,
-                                                              color:
-                                                                  busMuted)))),
-                                            ])),
-                                      ])))),
-                        ])),
+                    HomeHeader(
+                        action: IconButton(
+                            tooltip: 'Notifications',
+                            onPressed: () => openScreen(
+                                context, const NotificationsScreen()),
+                            icon: const DesignAsset('29a4b.svg',
+                                width: 27, height: 27)),
+                        details: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(student.name,
+                                  style: const TextStyle(
+                                      color: Colors.black, fontSize: 15)),
+                              Text(student.grade,
+                                  style: const TextStyle(
+                                      color: Colors.black, fontSize: 15)),
+                              InkWell(
+                                  onTap: () => openScreen(
+                                      context, const SelectChildScreen()),
+                                  child: const Padding(
+                                      padding:
+                                          EdgeInsets.symmetric(vertical: 8),
+                                      child: Text('Switch child',
+                                          style: TextStyle(
+                                              fontSize: 12, color: busMuted)))),
+                            ])),
                     Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 26),
                         child: Column(
@@ -98,6 +58,7 @@ class DashboardScreen extends ConsumerWidget {
                               const Text('Today’s Journey',
                                   style: TextStyle(
                                       fontSize: 18,
+                                      height: 1.2,
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
                               const Row(
@@ -115,11 +76,22 @@ class DashboardScreen extends ConsumerWidget {
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold))),
                                 TextButton(
+                                    style: TextButton.styleFrom(
+                                        backgroundColor: busBlue,
+                                        foregroundColor: Colors.white,
+                                        minimumSize: const Size(105, 24),
+                                        padding: const EdgeInsets.symmetric(
+                                            horizontal: 12),
+                                        tapTargetSize:
+                                            MaterialTapTargetSize.shrinkWrap,
+                                        shape: const StadiumBorder()),
                                     onPressed: () =>
                                         openScreen(context, const MapScreen()),
-                                    child: const Text('View map'))
+                                    child: const Text('View map',
+                                        style: TextStyle(fontSize: 12)))
                               ]),
                               BusMapPreview(
+                                  radius: 0,
                                   onTap: () =>
                                       openScreen(context, const MapScreen())),
                               const SizedBox(height: 20),
@@ -203,10 +175,16 @@ void showTransportProfile(BuildContext context, {required bool school}) {
                   children: [
                     Row(children: [
                       school
-                          ? const DesignAsset('05112.svg',
+                          ? const DesignAsset('39792.svg',
                               width: 38, height: 38)
-                          : const DesignAsset('28284.svg',
-                              width: 36, height: 36),
+                          : const SizedBox(
+                              width: 45,
+                              height: 44,
+                              child:
+                                  Stack(alignment: Alignment.center, children: [
+                                DesignAsset('9e7a6.svg', width: 45, height: 44),
+                                DesignAsset('28284.svg', width: 36, height: 36)
+                              ])),
                       const SizedBox(width: 12),
                       Expanded(
                           child: Text(

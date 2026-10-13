@@ -11,19 +11,27 @@ class SchoolBusParentApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     return MaterialApp(
       title: 'School Bus',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: busBlue, primary: busBlue),
         scaffoldBackgroundColor: busBackground,
         fontFamily: 'Roboto',
         textTheme: ThemeData.light()
             .textTheme
-            .apply(bodyColor: busText, displayColor: busText),
+            .copyWith(
+                bodyMedium: const TextStyle(
+                    fontFamily: 'Roboto', fontSize: 14, height: 1.2))
+            .apply(
+                fontFamily: 'Roboto',
+                bodyColor: busText,
+                displayColor: busText),
         appBarTheme: const AppBarTheme(
             backgroundColor: busBlue,
             foregroundColor: Colors.white,
             elevation: 3,
             titleTextStyle: TextStyle(
                 fontSize: 24,
+                fontFamily: 'Roboto',
                 fontWeight: FontWeight.bold,
                 color: Colors.white)),
         filledButtonTheme: FilledButtonThemeData(

@@ -45,8 +45,9 @@ class RoleScreen extends StatelessWidget {
                                 style: FilledButton.styleFrom(
                                     backgroundColor: Colors.white,
                                     foregroundColor: busBlue),
-                                onPressed: () =>
-                                    openScreen(context, const DriverScreen(), name: 'transport-home'),
+                                onPressed: () => openScreen(
+                                    context, const DriverScreen(),
+                                    name: 'transport-home'),
                                 icon: const Icon(Icons.directions_bus),
                                 label: const Text('Bus driver'))),
                         const SizedBox(height: 24),

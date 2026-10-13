@@ -12,7 +12,13 @@ class MapScreen extends StatelessWidget {
         BusCard(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
             child: Row(children: [
-              const DesignAsset('05112.svg', width: 37, height: 38),
+              const SizedBox(
+                  width: 51,
+                  height: 47,
+                  child: Stack(alignment: Alignment.center, children: [
+                    DesignAsset('dd7f5.svg', width: 51, height: 47),
+                    DesignAsset('05112.svg', width: 37, height: 38)
+                  ])),
               const SizedBox(width: 16),
               Expanded(
                   child: Column(

@@ -22,12 +22,12 @@ class _LiveMapScreenState extends State<LiveMapScreen> {
     super.initState();
     _timer = Timer.periodic(const Duration(seconds: 10), (_) {
       setState(() {
-        final id = const MarkerId('bus-location');
-        final next = const LatLng(6.9271, 79.8612);
-        _markers[id] = Marker(
+        const id = MarkerId('bus-location');
+        const next = LatLng(6.9271, 79.8612);
+        _markers[id] = const Marker(
           markerId: id,
           position: next,
-          infoWindow: const InfoWindow(title: 'Bus 24'),
+          infoWindow: InfoWindow(title: 'Bus 24'),
         );
       });
     });

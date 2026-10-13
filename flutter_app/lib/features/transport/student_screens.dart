@@ -40,7 +40,9 @@ class SelectChildScreen extends ConsumerWidget {
                                                   .notifier)
                                               .state = i;
                                           Navigator.of(context).pushReplacement(
-                                              MaterialPageRoute<void>(settings: const RouteSettings(name: 'transport-home'),
+                                              MaterialPageRoute<void>(
+                                                  settings: const RouteSettings(
+                                                      name: 'transport-home'),
                                                   builder: (_) =>
                                                       const DashboardScreen()));
                                         },
@@ -67,17 +69,15 @@ class SelectChildScreen extends ConsumerWidget {
                           tooltip: 'Add child',
                           onPressed: () =>
                               openScreen(context, const AddStudentScreen()),
-                          icon: SizedBox(
+                          icon: const SizedBox(
                               width: 110,
                               height: 110,
-                              child: Stack(
-                                  alignment: Alignment.center,
-                                  children: const [
-                                    DesignAsset('a2257.svg',
-                                        width: 110, height: 110),
-                                    DesignAsset('00d84.svg',
-                                        width: 68, height: 70)
-                                  ]))),
+                              child:
+                                  Stack(alignment: Alignment.center, children: [
+                                DesignAsset('a2257.svg',
+                                    width: 110, height: 110),
+                                DesignAsset('00d84.svg', width: 68, height: 70)
+                              ]))),
                     ])))));
   }
 }
@@ -153,8 +153,9 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
               : _notes.text.trim(),
           present: false)
     ];
-    if (!widget.driver)
+    if (!widget.driver) {
       ref.read(selectedChildProvider.notifier).state = existing.length;
+    }
     Navigator.pop(context);
     ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Saved in this UI preview session')));

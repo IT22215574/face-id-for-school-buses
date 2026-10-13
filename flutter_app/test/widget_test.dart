@@ -18,7 +18,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('Parent selects and switches children, opens map and profiles', (tester) async {
+  testWidgets('Parent selects and switches children, opens map and profiles',
+      (tester) async {
     await start(tester);
     await tester.tap(find.text('Parent'));
     await tester.pumpAndSettle();
@@ -38,8 +39,14 @@ void main() {
     expect(find.text('Sunil Fernando'), findsOneWidget);
     await tester.tap(find.byTooltip('Close'));
     await tester.pumpAndSettle();
-    await tester.ensureVisible(find.text('Switch child  ▾'));
-    await tester.tap(find.text('Switch child  ▾'));
+    await tester.ensureVisible(find.byTooltip('School Profile'));
+    await tester.tap(find.byTooltip('School Profile'));
+    await tester.pumpAndSettle();
+    expect(find.text('SCHOOL NAME'), findsOneWidget);
+    await tester.tap(find.byTooltip('Close'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Switch child'));
+    await tester.tap(find.text('Switch child'));
     await tester.pumpAndSettle();
     await tester.tap(find.byTooltip('Amaya Perera'));
     await tester.pumpAndSettle();
@@ -47,7 +54,8 @@ void main() {
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Driver attendance, student search and SOS preview are reachable', (tester) async {
+  testWidgets('Driver attendance, student search and SOS preview are reachable',
+      (tester) async {
     await start(tester);
     await tester.tap(find.text('Bus driver'));
     await tester.pumpAndSettle();
@@ -59,8 +67,6 @@ void main() {
     await tester.tap(find.byTooltip('Home'));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Students'));
-    await tester.tap(find.text('Students').first);
-    // The label sits below the tappable tile; tap its semantic button instead.
     await tester.tap(find.bySemanticsLabel('Students').first);
     await tester.pumpAndSettle();
     expect(find.byType(StudentListScreen), findsOneWidget);
@@ -76,18 +82,24 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.text('Vehicle breakdown'));
     await tester.pumpAndSettle();
-    expect(find.text('This is a UI preview. Emergency calls and alerts are not connected.'), findsOneWidget);
+    expect(
+        find.text(
+            'This is a UI preview. Emergency calls and alerts are not connected.'),
+        findsOneWidget);
     expect(tester.takeException(), isNull);
   });
 
-  testWidgets('Adding a student validates and updates the shared list', (tester) async {
+  testWidgets('Adding a student validates and updates the shared list',
+      (tester) async {
     tester.view.physicalSize = const Size(402, 1000);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     final container = ProviderContainer();
     addTearDown(container.dispose);
-    await tester.pumpWidget(UncontrolledProviderScope(container: container, child: const MaterialApp(home: AddStudentScreen(driver: true))));
+    await tester.pumpWidget(UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: AddStudentScreen(driver: true))));
     await tester.pumpAndSettle();
     await tester.ensureVisible(find.text('Save student'));
     await tester.tap(find.text('Save student'));
@@ -111,7 +123,8 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       for (final screen in [const DashboardScreen(), const DriverScreen()]) {
-        await tester.pumpWidget(ProviderScope(child: MaterialApp(home: screen)));
+        await tester
+            .pumpWidget(ProviderScope(child: MaterialApp(home: screen)));
         await tester.pumpAndSettle();
         expect(tester.takeException(), isNull);
       }

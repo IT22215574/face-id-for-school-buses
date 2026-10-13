@@ -14,59 +14,27 @@ class DriverScreen extends ConsumerWidget {
     return Scaffold(
         body: SafeArea(
             top: false,
-            child: Center(
+            child: Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 600),
                     child: SingleChildScrollView(
                         child: Column(children: [
-                      SizedBox(
-                          height: 270,
-                          child: Stack(children: [
-                            Container(
-                                height: 210,
-                                decoration: const BoxDecoration(
-                                    color: busBlue,
-                                    borderRadius: BorderRadius.vertical(
-                                        bottom: Radius.circular(20)),
-                                    boxShadow: [
-                                      BoxShadow(
-                                          color: Color(0x33000000),
-                                          blurRadius: 4,
-                                          offset: Offset(0, 4))
-                                    ])),
-                            Positioned(
-                                top: 28 + MediaQuery.paddingOf(context).top,
-                                right: 44,
-                                child: IconButton.filled(
-                                    tooltip: 'SOS',
-                                    style: IconButton.styleFrom(
-                                        backgroundColor:
-                                            const Color(0xFFF62727),
-                                        minimumSize: const Size(48, 48)),
-                                    onPressed: () =>
-                                        openScreen(context, const SosScreen()),
-                                    icon: const DesignAsset('41648.svg',
-                                        width: 29, height: 29))),
-                            Positioned(
-                                top: 112,
-                                left: 35,
-                                right: 35,
-                                child: BusCard(
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 28, vertical: 24),
-                                    child: SizedBox(
-                                        height: 98,
-                                        child: Row(children: [
-                                          const ProfileAvatar(driver: true),
-                                          const SizedBox(width: 28),
-                                          Expanded(
-                                              child: Text(
-                                                  'Sunil Fernando\nWP NC-1234\n$present students in bus\nDriver ID: D-024',
-                                                  style: const TextStyle(
-                                                      fontSize: 15,
-                                                      color: Colors.black)))
-                                        ])))),
-                          ])),
+                      HomeHeader(
+                          driver: true,
+                          action: IconButton.filled(
+                              tooltip: 'SOS',
+                              style: IconButton.styleFrom(
+                                  backgroundColor: const Color(0xFFF62727),
+                                  minimumSize: const Size(48, 48)),
+                              onPressed: () =>
+                                  openScreen(context, const SosScreen()),
+                              icon: const DesignAsset('41648.svg',
+                                  width: 29, height: 29)),
+                          details: Text(
+                              'Sunil Fernando\nWP NC-1234\n$present students in bus\nDriver ID: D-024',
+                              style: const TextStyle(
+                                  fontSize: 15, color: Colors.black))),
                       Padding(
                           padding: const EdgeInsets.symmetric(horizontal: 23),
                           child: Column(children: [
@@ -292,7 +260,8 @@ class SosScreen extends StatelessWidget {
                                   ])),
                       child: BusCard(
                           color: const Color(0xFFD9D9D9),
-                          child: Center(
+                          child: Align(
+                              alignment: Alignment.topCenter,
                               child: Text(label,
                                   textAlign: TextAlign.center,
                                   style: const TextStyle(

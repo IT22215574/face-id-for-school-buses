@@ -38,12 +38,13 @@ class BusCard extends StatelessWidget {
               BoxShadow(
                   color: Color(0x33000000), blurRadius: 4, offset: Offset(0, 3))
             ]),
-        child: child,
+        child: Material(color: Colors.transparent, child: child),
       );
 }
 
 void openScreen(BuildContext context, Widget screen, {String? name}) =>
-    Navigator.of(context).push(MaterialPageRoute<void>(settings: RouteSettings(name: name), builder: (_) => screen));
+    Navigator.of(context).push(MaterialPageRoute<void>(
+        settings: RouteSettings(name: name), builder: (_) => screen));
 
 class BusScaffold extends StatelessWidget {
   const BusScaffold(
@@ -64,7 +65,8 @@ class BusScaffold extends StatelessWidget {
                     BorderRadius.vertical(bottom: Radius.circular(20)))),
         body: SafeArea(
             top: false,
-            child: Center(
+            child: Align(
+                alignment: Alignment.topCenter,
                 child: ConstrainedBox(
                     constraints: const BoxConstraints(maxWidth: 600),
                     child: SingleChildScrollView(
@@ -98,8 +100,9 @@ class BusBottomBar extends StatelessWidget {
                       IconButton(
                           tooltip: 'Home',
                           onPressed: onHome ??
-                              () => Navigator.of(context)
-                                  .popUntil((route) => route.settings.name == 'transport-home' || route.isFirst),
+                              () => Navigator.of(context).popUntil((route) =>
+                                  route.settings.name == 'transport-home' ||
+                                  route.isFirst),
                           icon: const DesignAsset('8e6b2.svg',
                               width: 29, height: 29)),
                       const SizedBox(width: 48),
@@ -123,8 +126,10 @@ class ProfileAvatar extends StatelessWidget {
 
 /// The Figma map artwork is a preview, not a live location feed.
 class BusMapPreview extends StatelessWidget {
-  const BusMapPreview({super.key, this.height = 174, this.onTap});
+  const BusMapPreview(
+      {super.key, this.height = 174, this.radius = 20, this.onTap});
   final double height;
+  final double radius;
   final VoidCallback? onTap;
   @override
   Widget build(BuildContext context) => Semantics(
@@ -134,6 +139,7 @@ class BusMapPreview extends StatelessWidget {
         onTap: onTap,
         borderRadius: BorderRadius.circular(20),
         child: BusCard(
+            radius: radius,
             padding: const EdgeInsets.all(9),
             child: SizedBox(
                 height: height,
@@ -178,4 +184,57 @@ class DetailField extends StatelessWidget {
         const SizedBox(height: 5),
         Text(value, style: const TextStyle(fontSize: 14, color: busText)),
       ]));
+}
+
+class HomeHeader extends StatelessWidget {
+  const HomeHeader(
+      {super.key,
+      required this.details,
+      required this.action,
+      this.driver = false});
+  final Widget details, action;
+  final bool driver;
+  @override
+  Widget build(BuildContext context) => Stack(children: [
+        Positioned(
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+                height: 210,
+                decoration: const BoxDecoration(
+                    color: busBlue,
+                    borderRadius:
+                        BorderRadius.vertical(bottom: Radius.circular(20)),
+                    boxShadow: [
+                      BoxShadow(
+                          color: Color(0x33000000),
+                          blurRadius: 4,
+                          offset: Offset(0, 4))
+                    ]))),
+        Column(children: [
+          SizedBox(
+              height: 105,
+              child: Align(
+                  alignment: Alignment.topRight,
+                  child: Padding(
+                      padding: EdgeInsets.only(
+                          top: 28 + MediaQuery.paddingOf(context).top,
+                          right: 38),
+                      child: action))),
+          Padding(
+              padding: EdgeInsets.symmetric(
+                  horizontal: MediaQuery.sizeOf(context).width < 370 ? 24 : 42),
+              child: BusCard(
+                  padding: const EdgeInsets.all(24),
+                  child: ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 108),
+                      child: Row(children: [
+                        ProfileAvatar(driver: driver),
+                        const SizedBox(width: 20),
+                        Expanded(child: details)
+                      ])))),
+          const SizedBox(height: 17),
+        ]),
+      ]);
 }
