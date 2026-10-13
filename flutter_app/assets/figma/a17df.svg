@@ -1,0 +1,20 @@
+<svg preserveAspectRatio="none" overflow="visible" style="display: block;" width="110" height="110" viewBox="0 0 110 110" fill="none" xmlns="http://www.w3.org/2000/svg">
+<g id="Group 42" filter="url(#filter0_d_0_19)">
+<circle id="Ellipse 5" cx="55" cy="51" r="51" fill="#F5F5F5"/>
+<g id="iconamoon:profile-fill">
+<path id="Vector" fill-rule="evenodd" clip-rule="evenodd" d="M41.8606 35.2792C41.8606 31.8769 43.2121 28.6139 45.6179 26.2081C48.0237 23.8023 51.2867 22.4508 54.689 22.4508C58.0913 22.4508 61.3543 23.8023 63.7601 26.2081C66.1659 28.6139 67.5175 31.8769 67.5175 35.2792C67.5175 38.6816 66.1659 41.9445 63.7601 44.3503C61.3543 46.7561 58.0913 48.1077 54.689 48.1077C51.2867 48.1077 48.0237 46.7561 45.6179 44.3503C43.2121 41.9445 41.8606 38.6816 41.8606 35.2792ZM41.8606 54.5219C37.6077 54.5219 33.529 56.2114 30.5217 59.2186C27.5144 62.2259 25.825 66.3046 25.825 70.5575C25.825 73.1092 26.8387 75.5565 28.643 77.3608C30.4474 79.1652 32.8946 80.1789 35.4463 80.1789H73.9317C76.4835 80.1789 78.9307 79.1652 80.735 77.3608C82.5394 75.5565 83.5531 73.1092 83.5531 70.5575C83.5531 66.3046 81.8636 62.2259 78.8564 59.2186C75.8491 56.2114 71.7704 54.5219 67.5175 54.5219H41.8606Z" fill="#1A73E8"/>
+</g>
+</g>
+<defs>
+<filter id="filter0_d_0_19" x="0" y="0" width="110" height="110" filterUnits="userSpaceOnUse" color-interpolation-filters="sRGB">
+<feFlood flood-opacity="0" result="BackgroundImageFix"/>
+<feColorMatrix in="SourceAlpha" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 127 0" result="hardAlpha"/>
+<feOffset dy="4"/>
+<feGaussianBlur stdDeviation="2"/>
+<feComposite in2="hardAlpha" operator="out"/>
+<feColorMatrix type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.25 0"/>
+<feBlend mode="normal" in2="BackgroundImageFix" result="effect1_dropShadow_0_19"/>
+<feBlend mode="normal" in="SourceGraphic" in2="effect1_dropShadow_0_19" result="shape"/>
+</filter>
+</defs>
+</svg>

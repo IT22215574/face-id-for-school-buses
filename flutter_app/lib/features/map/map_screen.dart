@@ -1,52 +1,79 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
+import '../../core/bus_ui.dart';
 
-class MapScreen extends StatefulWidget {
-  const MapScreen({super.key});
-
+class MapScreen extends StatelessWidget {
+  const MapScreen({super.key, this.driver = false});
+  final bool driver;
   @override
-  State<MapScreen> createState() => _MapScreenState();
-}
-
-class _MapScreenState extends State<MapScreen> {
-  final CameraPosition _initialPosition = const CameraPosition(
-    target: LatLng(6.9271, 79.8612),
-    zoom: 13,
-  );
-  final Map<MarkerId, Marker> _markers = {};
-  Timer? _timer;
-
-  @override
-  void initState() {
-    super.initState();
-    _timer = Timer.periodic(const Duration(seconds: 10), (_) {
-      setState(() {
-        final id = const MarkerId('bus-location');
-        final next = const LatLng(6.9271, 79.8612);
-        _markers[id] = Marker(
-          markerId: id,
-          position: next,
-          infoWindow: const InfoWindow(title: 'Bus 24'),
-        );
-      });
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: const Text('Live Bus Map')),
-      body: GoogleMap(
-        initialCameraPosition: _initialPosition,
-        markers: _markers.values.toSet(),
-      ),
-    );
-  }
-
-  @override
-  void dispose() {
-    _timer?.cancel();
-    super.dispose();
-  }
+  Widget build(BuildContext context) => BusScaffold(
+      title: driver ? 'Route Preview' : 'School Bus Locator',
+      padding: const EdgeInsets.symmetric(horizontal: 39, vertical: 32),
+      child: Column(children: [
+        BusCard(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 32),
+            child: Row(children: [
+              const DesignAsset('05112.svg', width: 37, height: 38),
+              const SizedBox(width: 16),
+              Expanded(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                    const Text('Royal College',
+                        style: TextStyle(
+                            fontSize: 16,
+                            color: Colors.black,
+                            fontWeight: FontWeight.bold)),
+                    const SizedBox(height: 8),
+                    Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 5),
+                        decoration: BoxDecoration(
+                            color: busBlue,
+                            borderRadius: BorderRadius.circular(8)),
+                        child: const Text('Arriving at school · 2 mins',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold))),
+                  ]))
+            ])),
+        const SizedBox(height: 24),
+        ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: SizedBox(
+                height: 450,
+                width: double.infinity,
+                child: Stack(children: [
+                  Positioned.fill(
+                      child: Image.asset('assets/figma/767fa.png',
+                          fit: BoxFit.cover)),
+                  Positioned(
+                      top: 4,
+                      left: 112,
+                      child: Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                              color: busBlue,
+                              borderRadius: BorderRadius.circular(28)),
+                          child: const Center(
+                              child: DesignAsset('d6e2b.svg',
+                                  width: 28, height: 28)))),
+                  const Positioned(
+                      top: 51,
+                      left: 159,
+                      child: DesignAsset('f4c5e.svg', width: 47, height: 118)),
+                  const Positioned(
+                      top: 167,
+                      left: 183,
+                      child: DesignAsset('e131b.svg', width: 55, height: 51)),
+                  const Positioned(
+                      top: 176,
+                      left: 195,
+                      child: DesignAsset('5898c.svg', width: 31, height: 29)),
+                ]))),
+        const SizedBox(height: 16),
+        const Text('Sample route preview · not a live location',
+            style: TextStyle(fontSize: 12, color: busMuted)),
+      ]));
 }

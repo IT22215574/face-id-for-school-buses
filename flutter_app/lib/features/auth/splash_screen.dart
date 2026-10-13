@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'login_screen.dart';
-import '../dashboard/dashboard_screen.dart';
+import '../transport/role_screen.dart';
 import '../../providers/auth_provider.dart';
 
 class SplashScreen extends ConsumerWidget {
@@ -21,7 +21,8 @@ class SplashScreen extends ConsumerWidget {
 
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(
-          builder: (_) => shouldBypassLogin ? const DashboardScreen() : const LoginScreen(),
+          builder: (_) =>
+              shouldBypassLogin ? const RoleScreen() : const LoginScreen(),
         ),
       );
     });
@@ -33,7 +34,8 @@ class SplashScreen extends ConsumerWidget {
           children: [
             Icon(Icons.directions_bus, size: 96, color: Colors.blue),
             SizedBox(height: 20),
-            Text('School Bus Parent App', style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+            Text('School Bus Parent App',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
             SizedBox(height: 16),
             CircularProgressIndicator(),
           ],
