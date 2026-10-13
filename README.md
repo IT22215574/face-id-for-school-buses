@@ -120,7 +120,7 @@ The seed command creates these local demo accounts:
 
 These accounts have been created in the local SQLite database at `backend/schoolbus.db`. Start the API from `backend/` with `uvicorn app.main:app --reload --host 0.0.0.0 --port 8000`. Docker/Postgres uses a separate database: run `docker compose exec api python -m scripts.seed_db` after starting that stack to create the same demo accounts there.
 
-The Flutter sign-in screen authenticates through `/auth/login` and obtains the server-authorized role through `/parents/me`. Parent accounts open child selection; driver accounts open the driver dashboard. Use **Sign out** on either dashboard to log in with another account. Transport screen data remains a UI preview.
+The Flutter sign-in screen authenticates through `/auth/login` and obtains the server-authorized role through `/me`. Parent accounts open child selection; driver accounts open the driver dashboard. Use **Sign out** on either dashboard to log in with another account. Transport screen data remains a UI preview.
 
 For a physical phone, use the development computer's LAN address:
 

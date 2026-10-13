@@ -53,7 +53,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       setState(() => error = e.response?.statusCode == 401
           ? 'Invalid email or password.'
-          : 'Cannot connect to the server. Please check the API is running.');
+          : e.response != null
+              ? 'Sign-in failed (server error ${e.response!.statusCode}). Please try again.'
+              : 'Cannot connect to the server. Please check the API is running.');
     } catch (_) {
       if (mounted) {
         setState(() => error = 'Unable to sign in. Please try again.');

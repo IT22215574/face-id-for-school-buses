@@ -18,7 +18,7 @@ class AuthService {
       await _storage.write(key: 'access_token', value: access);
       await _storage.write(key: 'refresh_token', value: refresh);
       // Fetch the role from the authenticated backend, never infer it from email.
-      final profile = await _apiClient.dio.get('/parents/me');
+      final profile = await _apiClient.dio.get('/me');
       final role = switch (profile.data['role']) {
         'PARENT' => AccountRole.parent,
         'DRIVER' => AccountRole.driver,
