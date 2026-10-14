@@ -122,6 +122,8 @@ These accounts have been created in the local SQLite database at `backend/school
 
 The Flutter sign-in screen authenticates through `/auth/login` and obtains the server-authorized role through `/me`. Parent accounts open child selection; driver accounts open the driver dashboard. Use **Sign out** on either dashboard to log in with another account. Transport screen data remains a UI preview.
 
+For the live map on iOS, enable **Maps SDK for iOS** in your Google Cloud project and create an API key. Open `flutter_app/ios/Runner.xcworkspace` in Xcode, select the **Runner target → Build Settings**, and add a user-defined setting named `GOOGLE_MAPS_API_KEY` with your key for the build configurations you use. `Info.plist` passes that setting to `AppDelegate`, which initializes Google Maps. The backend's `GOOGLE_MAPS_API_KEY` setting does not configure the iOS app. Fully stop and rebuild the app after changing the native configuration; hot reload is insufficient. Without a configured key, the tracking screen shows a map-unavailable message and still allows location sharing.
+
 For a physical phone, use the development computer's LAN address:
 
 ```sh

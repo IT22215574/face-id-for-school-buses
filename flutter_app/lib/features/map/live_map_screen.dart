@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -24,12 +26,35 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
   bool _sharing = false, _busy = false, _uploading = false, _reading = false;
   int _session = 0;
   DateTime? _lastUpload;
+  bool _mapsReady = false;
+  bool _checkingMaps = true;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _checkMapsConfiguration();
     _loadBus();
+  }
+
+  Future<void> _checkMapsConfiguration() async {
+    var ready = true;
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      try {
+        ready = await const MethodChannel('school_bus/maps_configuration')
+                .invokeMethod<bool>('isConfigured') ??
+            false;
+      } on PlatformException {
+        ready = false;
+      } on MissingPluginException {
+        ready = false;
+      }
+    }
+    if (!mounted) return;
+    setState(() {
+      _mapsReady = ready;
+      _checkingMaps = false;
+    });
   }
 
   Future<void> _loadBus() async {
@@ -205,23 +230,36 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
                 Text(_plate.isEmpty ? 'Live Bus Map' : 'Live Map · $_plate')),
         body: Column(children: [
           Expanded(
-              child: GoogleMap(
-            initialCameraPosition:
-                const CameraPosition(target: LatLng(6.9271, 79.8612), zoom: 15),
-            onMapCreated: (controller) {
-              _map = controller;
-              if (_point != null) {
-                controller.moveCamera(CameraUpdate.newLatLng(_point!));
-              }
-            },
-            markers: {
-              if (_point != null)
-                Marker(
-                    markerId: const MarkerId('bus'),
-                    position: _point!,
-                    infoWindow: InfoWindow(title: _plate))
-            },
-          )),
+              child: _checkingMaps
+                  ? const Center(child: CircularProgressIndicator())
+                  : !_mapsReady
+                      ? const Center(
+                          child: Padding(
+                            padding: EdgeInsets.all(24),
+                            child: Text(
+                              'The map is unavailable in this build. You can still share your bus location below.',
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                        )
+                      : GoogleMap(
+                          initialCameraPosition: const CameraPosition(
+                              target: LatLng(6.9271, 79.8612), zoom: 15),
+                          onMapCreated: (controller) {
+                            _map = controller;
+                            if (_point != null) {
+                              controller
+                                  .moveCamera(CameraUpdate.newLatLng(_point!));
+                            }
+                          },
+                          markers: {
+                            if (_point != null)
+                              Marker(
+                                  markerId: const MarkerId('bus'),
+                                  position: _point!,
+                                  infoWindow: InfoWindow(title: _plate))
+                          },
+                        )),
           SafeArea(
               top: false,
               child: Padding(
