@@ -47,7 +47,8 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
 
   Future<void> _checkMapsConfiguration() async {
     var ready = true;
-    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS ||
+        defaultTargetPlatform == TargetPlatform.android)) {
       try {
         ready = await const MethodChannel('school_bus/maps_configuration')
                 .invokeMethod<bool>('isConfigured') ??
