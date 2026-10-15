@@ -35,3 +35,5 @@ __all__ = [
     "EmergencyContact",
     "EmergencyNotification",
 ]
+
+from app.models.student_transport import StudentTransport

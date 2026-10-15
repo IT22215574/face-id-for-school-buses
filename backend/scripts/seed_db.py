@@ -12,6 +12,7 @@ from app.models.parent import Parent
 from app.models.parent_student import ParentStudent
 from app.models.payroll import Driver, DriverAttendance, DriverPayProfile, PayPeriod, Trip
 from app.models.student import Student
+from app.models.student_transport import StudentTransport
 
 
 def seed() -> None:
@@ -73,7 +74,7 @@ def seed() -> None:
 
     student = db.query(Student).filter(Student.name == "Aisha").first()
     if not student:
-        student = Student(name="Aisha", grade="5", school_id="SCH-001")
+        student = Student(name="Aisha", grade="5", school_id="KUR-MALIYADEVA-BALIKA")
         db.add(student)
         db.commit()
         db.refresh(student)
@@ -85,10 +86,32 @@ def seed() -> None:
 
     bus = db.query(Bus).filter(Bus.plate_no == "BUS-24").first()
     if not bus:
-        bus = Bus(plate_no="BUS-24", device_id="BUS24-DEVICE-001", route_name="North Loop")
+        bus = Bus(plate_no="BUS-24", device_id="BUS24-DEVICE-001", route_name="Kurunegala school loop")
         db.add(bus)
         db.commit()
         db.refresh(bus)
+
+    if student.school_id == "SCH-001":
+        student.school_id = "KUR-MALIYADEVA-BALIKA"
+    if bus.route_name == "North Loop":
+        bus.route_name = "Kurunegala school loop"
+    if not db.get(StudentTransport, student.id):
+        db.add(StudentTransport(student_id=student.id, bus_id=bus.id))
+    db.commit()
+
+    second = db.query(Student).filter_by(name="Kavindu", school_id="KUR-MALIYADEVA").first()
+    if second is None:
+        second = Student(name="Kavindu", grade="6", school_id="KUR-MALIYADEVA")
+        db.add(second)
+        db.flush()
+    if not db.get(ParentStudent, (parent.id, second.id)):
+        db.add(ParentStudent(parent_id=parent.id, student_id=second.id))
+    if not db.get(StudentTransport, second.id):
+        db.add(StudentTransport(student_id=second.id, bus_id=bus.id))
+    # Migrate only the original demo coordinate, retaining its old timestamp.
+    for point in db.query(BusLocation).filter_by(bus_id=bus.id, lat=6.9271, lng=79.8612):
+        point.lat, point.lng = 7.4863, 80.3647
+    db.commit()
 
     device = db.query(Device).filter(Device.bus_id == bus.id).first()
     if not device:
@@ -97,16 +120,16 @@ def seed() -> None:
         db.commit()
 
     if not db.query(EmergencyContact).filter(EmergencyContact.name == "School Safety Desk").first():
-        db.add(EmergencyContact(school_id="SCH-001", name="School Safety Desk", phone="+15550009999", role="COORDINATOR", priority_order=1))
-        db.add(EmergencyContact(school_id="SCH-001", name="Transport Manager", phone="+15550009998", role="COORDINATOR", priority_order=2))
+        db.add(EmergencyContact(school_id="KUR-MALIYADEVA-BALIKA", name="School Safety Desk", phone="+15550009999", role="COORDINATOR", priority_order=1))
+        db.add(EmergencyContact(school_id="KUR-MALIYADEVA-BALIKA", name="Transport Manager", phone="+15550009998", role="COORDINATOR", priority_order=2))
 
     location = db.query(BusLocation).filter(BusLocation.bus_id == bus.id).order_by(BusLocation.server_time.desc()).first()
     if not location:
         db.add(
             BusLocation(
                 bus_id=bus.id,
-                lat=6.9271,
-                lng=79.8612,
+                lat=7.4863,
+                lng=80.3647,
                 speed=25.0,
                 heading=90.0,
                 gps_time=datetime.now(timezone.utc),
@@ -122,8 +145,8 @@ def seed() -> None:
                 bus_id=bus.id,
                 event_type=EventType.BOARDED,
                 event_time=datetime.now(timezone.utc),
-                lat=6.9271,
-                lng=79.8612,
+                lat=7.4863,
+                lng=80.3647,
                 confidence=0.99,
                 source="DEVICE",
             )
@@ -167,7 +190,7 @@ def seed() -> None:
             Trip(
                 bus_id=bus.id,
                 driver_id=driver.id,
-                route_name="North Loop",
+                route_name="Kurunegala school loop",
                 shift="MORNING",
                 start_time=start,
                 end_time=start.replace(hour=9),
@@ -189,6 +212,7 @@ def seed() -> None:
         )
 
     db.commit()
+    db.close()
     print("Seed data created successfully")
 
 

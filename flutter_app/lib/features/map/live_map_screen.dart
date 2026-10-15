@@ -7,9 +7,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import '../../providers/auth_provider.dart';
+import '../transport/transport_state.dart';
 
 class LiveMapScreen extends ConsumerStatefulWidget {
-  const LiveMapScreen({super.key});
+  const LiveMapScreen({super.key, this.driver = true});
+  final bool driver;
   @override
   ConsumerState<LiveMapScreen> createState() => _LiveMapScreenState();
 }
@@ -22,6 +24,12 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
   LatLng? _point;
   int? _busId;
   String _plate = '';
+  List<LatLng> _route = [];
+  List<Map<String, dynamic>> _stops = [];
+  List<LatLng> _history = [];
+  String _child = '';
+  String _childStatus = '';
+  int? _studentId;
   String _status = 'Loading your assigned bus…';
   bool _sharing = false, _busy = false, _uploading = false, _reading = false;
   int _session = 0;
@@ -59,12 +67,49 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
 
   Future<void> _loadBus() async {
     try {
-      final response = await ref.read(apiClientProvider).dio.get('/driver/bus');
+      _poll?.cancel();
+      final api = ref.read(apiClientProvider).dio;
+      dynamic bus;
+      if (widget.driver) {
+        bus = (await api.get('/driver/bus')).data;
+      } else {
+        final children = (await api.get('/me/transport')).data as List;
+        if (!mounted) return;
+        if (children.isEmpty) {
+          setState(
+              () => _status = 'No children assigned. Contact your school.');
+          return;
+        }
+        final index =
+            ref.read(selectedChildProvider).clamp(0, children.length - 1);
+        final child = children[index];
+        _child = child['name'] as String;
+        _studentId = child['id'] as int;
+        if (child['bus_id'] == null) {
+          setState(() =>
+              _status = 'No bus assigned to $_child. Contact your school.');
+          return;
+        }
+        bus = {'id': child['bus_id'], 'plate_no': child['plate_no']};
+      }
       if (!mounted) return;
       setState(() {
-        _busId = response.data['id'] as int;
-        _plate = response.data['plate_no'] as String;
-        _status = 'Ready to share your phone location';
+        _busId = bus['id'] as int;
+        _plate = bus['plate_no'] as String;
+        _status = widget.driver
+            ? 'Ready to share your phone location'
+            : 'Loading $_child’s bus location…';
+      });
+      final route = (await api.get('/buses/$_busId/route')).data;
+      if (!mounted) return;
+      setState(() {
+        _stops = (route['stops'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        _route = _stops
+            .map((e) => LatLng(
+                (e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
+            .toList();
       });
       await _readLocation();
       if (mounted) {
@@ -87,6 +132,32 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     if (_busId == null || _sharing || _reading) return;
     _reading = true;
     try {
+      if (_studentId != null) {
+        final status = (await ref
+                .read(apiClientProvider)
+                .dio
+                .get('/students/$_studentId/status'))
+            .data;
+        if (!mounted) return;
+        setState(() => _childStatus = status['status'] == 'ON_BUS'
+            ? 'Last boarding event: on bus'
+            : 'No current boarding confirmation');
+      }
+      final history = (await ref
+              .read(apiClientProvider)
+              .dio
+              .get('/buses/$_busId/route-history', queryParameters: {
+        'from': DateTime.now()
+            .toUtc()
+            .subtract(const Duration(hours: 2))
+            .toIso8601String(),
+      }))
+          .data;
+      if (!mounted) return;
+      setState(() => _history = (history['points'] as List)
+          .map((e) => LatLng(
+              (e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
+          .toList());
       final response = await ref
           .read(apiClientProvider)
           .dio
@@ -95,11 +166,17 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
       final data = response.data;
       _showPoint(LatLng(
           (data['lat'] as num).toDouble(), (data['lng'] as num).toDouble()));
-      setState(() => _status = 'Last bus update: ${data['server_time']}');
+      final updated = DateTime.parse(data['server_time'] as String).toUtc();
+      final stale = DateTime.now().toUtc().difference(updated) >
+          const Duration(minutes: 2);
+      setState(() => _status =
+          '${stale ? "Bus location is stale" : "Bus location updated"} · ${updated.toLocal()}');
     } on DioException catch (e) {
       if (mounted && !_sharing) {
         setState(() => _status = e.response?.statusCode == 404
-            ? 'No bus location yet. Start sharing to send your position.'
+            ? (widget.driver
+                ? 'No bus location yet. Start sharing to send your position.'
+                : 'Waiting for the driver to share a location.')
             : _error(e));
       }
     } finally {
@@ -237,14 +314,14 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
                           child: Padding(
                             padding: EdgeInsets.all(24),
                             child: Text(
-                              'The map is unavailable in this build. You can still share your bus location below.',
+                              'The map is unavailable in this build. Location updates are shown below.',
                               textAlign: TextAlign.center,
                             ),
                           ),
                         )
                       : GoogleMap(
                           initialCameraPosition: const CameraPosition(
-                              target: LatLng(6.9271, 79.8612), zoom: 15),
+                              target: LatLng(7.4863, 80.3647), zoom: 15),
                           onMapCreated: (controller) {
                             _map = controller;
                             if (_point != null) {
@@ -252,7 +329,32 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
                                   .moveCamera(CameraUpdate.newLatLng(_point!));
                             }
                           },
+                          polylines: {
+                            if (_route.isNotEmpty)
+                              Polyline(
+                                  polylineId: const PolylineId('sample'),
+                                  points: _route,
+                                  color: Colors.grey,
+                                  patterns: [
+                                    PatternItem.dash(12),
+                                    PatternItem.gap(8)
+                                  ]),
+                            if (_history.isNotEmpty)
+                              Polyline(
+                                  polylineId: const PolylineId('recorded'),
+                                  points: _history,
+                                  color: Colors.blue,
+                                  width: 5),
+                          },
                           markers: {
+                            for (var i = 0; i < _stops.length; i++)
+                              Marker(
+                                  markerId: MarkerId('stop$i'),
+                                  position: _route[i],
+                                  infoWindow: InfoWindow(
+                                      title: _stops[i]['name'] as String),
+                                  icon: BitmapDescriptor.defaultMarkerWithHue(
+                                      BitmapDescriptor.hueGreen)),
                             if (_point != null)
                               Marker(
                                   markerId: const MarkerId('bus'),
@@ -266,28 +368,43 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
                   padding: const EdgeInsets.all(16),
                   child: Column(children: [
                     Text(_status, textAlign: TextAlign.center),
+                    if (_point != null)
+                      Text(
+                          'Bus coordinates: ${_point!.latitude.toStringAsFixed(5)}, ${_point!.longitude.toStringAsFixed(5)}'),
+                    if (!widget.driver)
+                      TextButton(
+                          onPressed: _loadBus,
+                          child: const Text('Refresh tracking')),
                     const SizedBox(height: 8),
+                    if (!widget.driver)
+                      Text('$_child · $_childStatus',
+                          textAlign: TextAlign.center),
                     const Text(
-                        'Keep this screen open during the trip. Sharing stops when you leave this screen or put the app in the background.',
+                        'Grey: approximate sample school stops · Blue: recorded GPS trail',
                         textAlign: TextAlign.center),
+                    if (widget.driver)
+                      const Text(
+                          'Keep this screen open during the trip. Sharing stops when you leave this screen or put the app in the background.',
+                          textAlign: TextAlign.center),
                     const SizedBox(height: 12),
-                    FilledButton.icon(
-                      onPressed: _sharing
-                          ? _stop
-                          : _busy
-                              ? null
-                              : _busId == null
-                                  ? _loadBus
-                                  : _start,
-                      icon: Icon(_sharing ? Icons.stop : Icons.location_on),
-                      label: Text(_sharing
-                          ? 'Stop sharing'
-                          : _busy
-                              ? 'Starting…'
-                              : _busId == null
-                                  ? 'Retry bus assignment'
-                                  : 'Start sharing'),
-                    ),
+                    if (widget.driver)
+                      FilledButton.icon(
+                        onPressed: _sharing
+                            ? _stop
+                            : _busy
+                                ? null
+                                : _busId == null
+                                    ? _loadBus
+                                    : _start,
+                        icon: Icon(_sharing ? Icons.stop : Icons.location_on),
+                        label: Text(_sharing
+                            ? 'Stop sharing'
+                            : _busy
+                                ? 'Starting…'
+                                : _busId == null
+                                    ? 'Retry bus assignment'
+                                    : 'Start sharing'),
+                      ),
                   ]))),
         ]),
       );

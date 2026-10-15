@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, WebSocket, WebSocketDisconnect, status
+from fastapi import HTTPException, APIRouter, WebSocket, WebSocketDisconnect, status
 from jose import JWTError, jwt
 
 from app.core.config import get_settings
@@ -44,17 +44,27 @@ async def authenticate_ws_token(token: str | None):
 async def bus_location_socket(websocket: WebSocket, bus_id: str):
     token = websocket.query_params.get("token")
     try:
-        await authenticate_ws_token(token)
-    except ValueError:
+        payload = await authenticate_ws_token(token)
+        from app.models.parent import Parent
+        from app.services.transport_service import authorize_bus
+        with SessionLocal() as db:
+            user = db.get(Parent, int(payload["sub"]))
+            if user is None:
+                raise ValueError("Unknown user")
+            authorize_bus(db, user, int(bus_id))
+    except (ValueError, KeyError, HTTPException):
         await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
         return
 
     await manager.connect(websocket, bus_id)
     try:
         while True:
-            db = SessionLocal()
-            latest = db.query(BusLocation).filter(BusLocation.bus_id == int(bus_id)).order_by(BusLocation.server_time.desc()).first()
-            db.close()
+            with SessionLocal() as db:
+                user = db.get(Parent, int(payload["sub"]))
+                if user is None:
+                    raise HTTPException(status_code=403)
+                authorize_bus(db, user, int(bus_id))
+                latest = db.query(BusLocation).filter(BusLocation.bus_id == int(bus_id)).order_by(BusLocation.server_time.desc()).first()
             if latest:
                 await websocket.send_json({
                     "bus_id": int(bus_id),
@@ -65,5 +75,9 @@ async def bus_location_socket(websocket: WebSocket, bus_id: str):
                     "server_time": latest.server_time.isoformat(),
                 })
             await asyncio.sleep(5)
+    except HTTPException:
+        await websocket.close(code=status.WS_1008_POLICY_VIOLATION)
     except WebSocketDisconnect:
+        pass
+    finally:
         manager.disconnect(websocket, bus_id)

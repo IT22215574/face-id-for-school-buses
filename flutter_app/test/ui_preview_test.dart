@@ -8,7 +8,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:school_bus_parent_app/app.dart';
 import 'package:school_bus_parent_app/features/dashboard/dashboard_screen.dart';
 import 'package:school_bus_parent_app/features/driver/driver_screen.dart';
-import 'package:school_bus_parent_app/features/map/map_screen.dart';
 import 'package:school_bus_parent_app/features/notifications/notifications_screen.dart';
 import 'package:school_bus_parent_app/features/transport/student_screens.dart';
 import 'package:school_bus_parent_app/features/transport/transport_state.dart';
@@ -35,25 +34,35 @@ void main() {
     debugDisableShadows = false;
     addTearDown(() => debugDisableShadows = previousShadows);
     final key = GlobalKey();
-    await tester.pumpWidget(ProviderScope(
-        child: RepaintBoundary(key: key, child: const SchoolBusParentApp())));
+    await tester.pumpWidget(ProviderScope(overrides: [
+      transportLoadProvider.overrideWith((ref) async {}),
+      transportStudentsProvider.overrideWith((ref) => [
+            const TransportStudent(
+                name: 'Kavindu', school: 'Maliyadeva College, Kurunegala')
+          ])
+    ], child: RepaintBoundary(key: key, child: const SchoolBusParentApp())));
     await tester.pumpAndSettle();
     final theme = Theme.of(tester.element(find.text('School Bus Sign In')));
     final screens = <String, Widget>{
       'parent-home': const DashboardScreen(),
       'driver-home': const DriverScreen(),
       'select-child': const SelectChildScreen(),
-      'add-child': const AddStudentScreen(),
       'student-details': const StudentListScreen(),
       'student-profile': const StudentProfileScreen(
           student: TransportStudent(name: 'Kavindu Perera')),
       'attendance': const AttendanceScreen(),
-      'map': const MapScreen(),
       'notifications': const NotificationsScreen(),
       'sos': const SosScreen(),
     };
     for (final entry in screens.entries) {
       await tester.pumpWidget(ProviderScope(
+          overrides: [
+            transportLoadProvider.overrideWith((ref) async {}),
+            transportStudentsProvider.overrideWith((ref) => [
+                  const TransportStudent(
+                      name: 'Kavindu', school: 'Maliyadeva College, Kurunegala')
+                ])
+          ],
           child: RepaintBoundary(
               key: key,
               child: MaterialApp(

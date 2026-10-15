@@ -11,7 +11,27 @@ class DashboardScreen extends ConsumerWidget {
   const DashboardScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loading = ref.watch(transportLoadProvider);
     final students = ref.watch(transportStudentsProvider);
+    if (loading.isLoading || loading.hasError || students.isEmpty) {
+      return Scaffold(
+          appBar: AppBar(title: const Text('Your children')),
+          body: Center(
+              child: loading.isLoading
+                  ? const CircularProgressIndicator()
+                  : Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(loading.hasError
+                          ? 'Could not load assigned children.'
+                          : 'No children assigned. Ask your school to link your child and bus.'),
+                      TextButton(
+                          onPressed: () =>
+                              ref.invalidate(transportLoadProvider),
+                          child: const Text('Retry')),
+                      TextButton(
+                          onPressed: () => signOut(context, ref),
+                          child: const Text('Sign out')),
+                    ])));
+    }
     final index =
         ref.watch(selectedChildProvider).clamp(0, students.length - 1);
     final student = students[index];
@@ -91,10 +111,16 @@ class DashboardScreen extends ConsumerWidget {
                                     child: const Text('View map',
                                         style: TextStyle(fontSize: 12)))
                               ]),
-                              BusMapPreview(
-                                  radius: 0,
-                                  onTap: () =>
-                                      openScreen(context, const MapScreen())),
+                              BusCard(
+                                  child: ListTile(
+                                leading: const Icon(Icons.location_on,
+                                    color: busBlue),
+                                title: Text(student.plate),
+                                subtitle: Text(
+                                    '${student.school} · Open live tracking'),
+                                onTap: () =>
+                                    openScreen(context, const MapScreen()),
+                              )),
                               const SizedBox(height: 20),
                               Row(
                                   mainAxisAlignment:
@@ -104,14 +130,16 @@ class DashboardScreen extends ConsumerWidget {
                                         tooltip: 'Driver Profile',
                                         onPressed: () => showTransportProfile(
                                             context,
-                                            school: false),
+                                            school: false,
+                                            student: student),
                                         icon: const DesignAsset('70e73.svg',
                                             width: 82, height: 81)),
                                     IconButton(
                                         tooltip: 'School Profile',
                                         onPressed: () => showTransportProfile(
                                             context,
-                                            school: true),
+                                            school: true,
+                                            student: student),
                                         icon: const DesignAsset('6d26b.svg',
                                             width: 82, height: 81)),
                                   ]),
@@ -158,7 +186,8 @@ class JourneyCard extends StatelessWidget {
       ]));
 }
 
-void showTransportProfile(BuildContext context, {required bool school}) {
+void showTransportProfile(BuildContext context,
+    {required bool school, required TransportStudent student}) {
   showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -197,21 +226,12 @@ void showTransportProfile(BuildContext context, {required bool school}) {
                               width: 16, height: 16))
                     ]),
                     const SizedBox(height: 24),
-                    DetailField(
-                        school ? 'SCHOOL NAME' : 'DRIVER’S NAME',
-                        school
-                            ? 'Royal College, Colombo 07'
-                            : 'Sunil Fernando'),
-                    DetailField(
-                        school ? 'SCHOOL’S ADDRESS' : 'CONTACT DETAILS',
-                        school
-                            ? 'Rajakeeya Mawatha, Colombo 07'
-                            : '077 555 0123'),
-                    DetailField(
-                        school ? 'CONTACT DETAILS' : 'VEHICLE NUMBER',
-                        school
-                            ? '011 269 5256 · office@royalcollege.lk'
-                            : 'WP NC-1234'),
+                    DetailField(school ? 'SCHOOL NAME' : 'DRIVER’S NAME',
+                        school ? student.school : student.driverName),
+                    DetailField(school ? 'SCHOOL’S ADDRESS' : 'CONTACT DETAILS',
+                        school ? 'Kurunegala' : student.driverPhone),
+                    DetailField(school ? 'CONTACT DETAILS' : 'VEHICLE NUMBER',
+                        school ? 'Contact your school office' : student.plate),
                     const SizedBox(height: 32),
                   ]))));
 }

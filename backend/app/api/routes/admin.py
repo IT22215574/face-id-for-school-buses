@@ -173,3 +173,17 @@ def rotate_device_key(payload: dict, db: Session = Depends(get_db), admin: Paren
     device.api_key_hash = hash_api_key(new_key)
     db.commit()
     return {"message": "Device API key rotated", "bus_id": bus_id}
+
+
+@router.put("/students/{student_id}/bus/{bus_id}")
+def assign_student_bus(student_id: int, bus_id: int, db: Session = Depends(get_db), admin: Parent = Depends(require_admin)):
+    from app.models.student_transport import StudentTransport
+    if db.get(Student, student_id) is None or db.get(Bus, bus_id) is None:
+        raise HTTPException(status_code=404, detail="Student or bus not found")
+    assignment = db.get(StudentTransport, student_id)
+    if assignment:
+        assignment.bus_id = bus_id
+    else:
+        db.add(StudentTransport(student_id=student_id, bus_id=bus_id))
+    db.commit()
+    return {"student_id": student_id, "bus_id": bus_id}

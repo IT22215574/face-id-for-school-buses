@@ -11,6 +11,8 @@ from app.models.payroll import Driver
 from app.services.device_service import save_bus_location
 from app.services.bus_service import get_live_location, get_route_history
 
+from app.services.transport_service import authorize_bus, ROUTE
+
 router = APIRouter(tags=["Buses"])
 
 
@@ -50,6 +52,7 @@ def read_bus_live_location(bus_id: int, current_parent=Depends(require_parent), 
     bus = db.get(Bus, bus_id)
     if bus is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bus not found")
+    authorize_bus(db, current_parent, bus_id)
     location = get_live_location(db, bus_id)
     if location is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No live location available")
@@ -67,5 +70,14 @@ def read_route_history(
     bus = db.get(Bus, bus_id)
     if bus is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bus not found")
+    authorize_bus(db, current_parent, bus_id)
     points = get_route_history(db, bus_id, from_, to)
     return {"bus_id": bus_id, "points": points}
+
+
+@router.get("/buses/{bus_id}/route")
+def read_bus_route(bus_id: int, current_parent=Depends(require_parent), db: Session = Depends(get_db)):
+    authorize_bus(db, current_parent, bus_id)
+    bus = db.get(Bus, bus_id)
+    return {"bus_id": bus_id, "name": bus.route_name, "sample": True,
+            "stops": ROUTE if bus.route_name.startswith("Kurunegala") else []}

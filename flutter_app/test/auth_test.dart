@@ -8,6 +8,7 @@ import 'package:school_bus_parent_app/core/api_client.dart';
 import 'package:school_bus_parent_app/features/auth/login_screen.dart';
 import 'package:school_bus_parent_app/features/driver/driver_screen.dart';
 import 'package:school_bus_parent_app/features/transport/student_screens.dart';
+import 'package:school_bus_parent_app/features/transport/transport_state.dart';
 import 'package:school_bus_parent_app/providers/auth_provider.dart';
 import 'package:school_bus_parent_app/services/auth_service.dart';
 
@@ -55,9 +56,12 @@ void main() {
       addTearDown(tester.view.resetPhysicalSize);
       addTearDown(tester.view.resetDevicePixelRatio);
       final service = TestAuthService();
-      await tester.pumpWidget(ProviderScope(
-          overrides: [authServiceProvider.overrideWithValue(service)],
-          child: const SchoolBusParentApp()));
+      await tester.pumpWidget(ProviderScope(overrides: [
+        transportLoadProvider.overrideWith((ref) async {}),
+        transportStudentsProvider.overrideWith(
+            (ref) => [const TransportStudent(name: 'Kavindu Perera')]),
+        authServiceProvider.overrideWithValue(service)
+      ], child: const SchoolBusParentApp()));
       await tester.pumpAndSettle();
       expect(find.byType(LoginScreen), findsOneWidget);
       await submit(tester, driver ? 'driver@example.com' : 'parent@example.com',
@@ -80,9 +84,12 @@ void main() {
   }
   testWidgets('Invalid credentials show an error and allow another attempt',
       (tester) async {
-    await tester.pumpWidget(ProviderScope(
-        overrides: [authServiceProvider.overrideWithValue(TestAuthService())],
-        child: const SchoolBusParentApp()));
+    await tester.pumpWidget(ProviderScope(overrides: [
+      transportLoadProvider.overrideWith((ref) async {}),
+      transportStudentsProvider.overrideWith(
+          (ref) => [const TransportStudent(name: 'Kavindu Perera')]),
+      authServiceProvider.overrideWithValue(TestAuthService())
+    ], child: const SchoolBusParentApp()));
     await tester.pumpAndSettle();
     await submit(tester, 'driver@example.com', 'incorrect-password');
     expect(find.text('Invalid email or password.'), findsOneWidget);

@@ -10,7 +10,18 @@ class DriverScreen extends ConsumerWidget {
   const DriverScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loading = ref.watch(transportLoadProvider);
     final students = ref.watch(transportStudentsProvider);
+    if (loading.isLoading || loading.hasError) {
+      return Scaffold(
+          appBar: AppBar(title: const Text('Driver transport')),
+          body: Center(
+              child: loading.isLoading
+                  ? const CircularProgressIndicator()
+                  : TextButton(
+                      onPressed: () => ref.invalidate(transportLoadProvider),
+                      child: const Text('Could not load students. Retry'))));
+    }
     final present = students.where((s) => s.present).length;
     return Scaffold(
         body: SafeArea(
@@ -33,7 +44,7 @@ class DriverScreen extends ConsumerWidget {
                               icon: const DesignAsset('41648.svg',
                                   width: 29, height: 29)),
                           details: Text(
-                              'Sunil Fernando\nWP NC-1234\n$present students in bus\nDriver ID: D-024',
+                              '${students.isEmpty ? "Driver" : students.first.driverName}\n${students.isEmpty ? "No students assigned" : students.first.plate}\n${students.length} assigned students',
                               style: const TextStyle(
                                   fontSize: 15, color: Colors.black))),
                       Padding(
@@ -89,13 +100,13 @@ class DriverScreen extends ConsumerWidget {
                                       onTap: () => openScreen(
                                           context, const StudentListScreen())),
                                   DriverAction(
-                                      label: 'Add student',
+                                      label: 'Assignments',
                                       asset: 'fde92.svg',
                                       composite: true,
-                                      onTap: () => openScreen(
-                                          context,
-                                          const AddStudentScreen(
-                                              driver: true))),
+                                      onTap: () => ScaffoldMessenger.of(context)
+                                          .showSnackBar(const SnackBar(
+                                              content: Text(
+                                                  'Your school administrator manages parent, child and bus assignments.')))),
                                   DriverAction(
                                       label: 'Attendance',
                                       onTap: () => openScreen(

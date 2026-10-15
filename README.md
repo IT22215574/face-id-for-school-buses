@@ -131,3 +131,36 @@ flutter run --dart-define=API_BASE_URL=http://YOUR_COMPUTER_IP:8000
 ```
 
 The default API address is `http://localhost:8000`. Android emulators usually require `http://10.0.2.2:8000`. The demo credentials are for local development.
+
+## Kurunegala tracking demo
+
+The seed script links `parent@example.com` (password `password123`) to Aisha
+(Maliyadeva Balika Vidyalaya) and Kavindu (Maliyadeva College). Both children
+are assigned to BUS-24, driven by `driver@example.com` (password `driver123`).
+Run `PYTHONPATH=. python scripts/seed_db.py` from `backend` to install or update
+these demo assignments. Startup creates the assignment table on existing local
+databases; managed databases can use `alembic upgrade head`.
+
+Open the driver's map and press **Start sharing**, allowing GPS permission.
+Keep that screen open in the foreground. On another device, sign in as the
+parent, select a child, and open **View map**. The parent map refreshes every
+five seconds and marks bus updates older than two minutes as stale. Tracking
+shows the assigned bus location; boarding status comes from the child's last
+boarding/alighting event, not independent GPS on the child.
+
+Grey dashed lines connect approximate sample Kurunegala school stops; they are
+not road directions or calculated ETAs. Blue lines show the last two hours of
+recorded bus GPS. Initial seed locations/events are demo data; use driver GPS
+sharing for an actual location. Map tiles require the platform Google Maps key
+(see the Flutter setup below); coordinates remain available without iOS map
+configuration.
+
+Administrators can create children via `POST /admin/students`, link an existing
+parent via `POST /admin/parent-student/link`, and assign a bus via
+`PUT /admin/students/{student_id}/bus/{bus_id}`. These require an admin token.
+Assignments persist in the database; child lists and profiles read `/me/transport`.
+Parents may read location/history only for buses assigned to their children;
+drivers may read/share only their active assigned bus.
+
+School references: [Maliyadeva College](https://www.maliyadeva.edu.lk/contact-us)
+and [Maliyadeva Balika Vidyalaya](https://bmvmaliyadeva.sch.lk/index.php/about-our-school/identity/school-profile).

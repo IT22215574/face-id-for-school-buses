@@ -3,12 +3,33 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
 import '../dashboard/dashboard_screen.dart';
 import 'transport_state.dart';
+import '../auth/sign_out.dart';
 
 class SelectChildScreen extends ConsumerWidget {
   const SelectChildScreen({super.key});
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final loading = ref.watch(transportLoadProvider);
     final students = ref.watch(transportStudentsProvider);
+    if (loading.isLoading || loading.hasError || students.isEmpty) {
+      return Scaffold(
+          appBar: AppBar(title: const Text('Your children')),
+          body: Center(
+              child: loading.isLoading
+                  ? const CircularProgressIndicator()
+                  : Column(mainAxisSize: MainAxisSize.min, children: [
+                      Text(loading.hasError
+                          ? 'Could not load assigned children.'
+                          : 'No children assigned. Ask your school to link your child and bus.'),
+                      TextButton(
+                          onPressed: () =>
+                              ref.invalidate(transportLoadProvider),
+                          child: const Text('Retry')),
+                      TextButton(
+                          onPressed: () => signOut(context, ref),
+                          child: const Text('Sign out')),
+                    ])));
+    }
     return Scaffold(
         backgroundColor: busBlue,
         appBar: AppBar(),
@@ -59,154 +80,8 @@ class SelectChildScreen extends ConsumerWidget {
                                   ]))
                           ]),
                       const SizedBox(height: 56),
-                      const Text('Add child',
-                          style: TextStyle(
-                              fontSize: 30,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 20),
-                      IconButton(
-                          tooltip: 'Add child',
-                          onPressed: () =>
-                              openScreen(context, const AddStudentScreen()),
-                          icon: const SizedBox(
-                              width: 110,
-                              height: 110,
-                              child:
-                                  Stack(alignment: Alignment.center, children: [
-                                DesignAsset('a2257.svg',
-                                    width: 110, height: 110),
-                                DesignAsset('00d84.svg', width: 68, height: 70)
-                              ]))),
                     ])))));
   }
-}
-
-class AddStudentScreen extends ConsumerStatefulWidget {
-  const AddStudentScreen({super.key, this.driver = false});
-  final bool driver;
-  @override
-  ConsumerState<AddStudentScreen> createState() => _AddStudentScreenState();
-}
-
-class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _name = TextEditingController();
-  final _pickup = TextEditingController();
-  final _notes = TextEditingController();
-  final _parent = TextEditingController();
-  final _phone = TextEditingController();
-  String _school = 'Royal College, Colombo 07';
-  String _grade = 'Grade 6 · Class A';
-  String _relationship = 'Mother / guardian';
-  @override
-  void dispose() {
-    for (final c in [_name, _pickup, _notes, _parent, _phone]) {
-      c.dispose();
-    }
-    super.dispose();
-  }
-
-  Widget field(String label, TextEditingController controller,
-          {bool required = true, TextInputType? keyboard}) =>
-      Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: TextFormField(
-              controller: controller,
-              keyboardType: keyboard,
-              decoration: InputDecoration(labelText: label),
-              validator: (value) =>
-                  required && (value == null || value.trim().isEmpty)
-                      ? 'Please enter $label'
-                      : null));
-  Widget choice(String label, String value, List<String> choices,
-          ValueChanged<String> change) =>
-      Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: DropdownButtonFormField<String>(
-              initialValue: value,
-              isExpanded: true,
-              decoration: InputDecoration(labelText: label),
-              items: choices
-                  .map((v) => DropdownMenuItem(
-                      value: v,
-                      child: Text(v, style: const TextStyle(fontSize: 14))))
-                  .toList(),
-              onChanged: (v) {
-                if (v != null) setState(() => change(v));
-              }));
-  void save() {
-    if (!_formKey.currentState!.validate()) return;
-    final existing = ref.read(transportStudentsProvider);
-    ref.read(transportStudentsProvider.notifier).state = [
-      ...existing,
-      TransportStudent(
-          name: _name.text.trim(),
-          school: _school,
-          grade: _grade,
-          pickup: _pickup.text.trim(),
-          parent:
-              _parent.text.trim().isEmpty ? 'Guardian' : _parent.text.trim(),
-          phone: _phone.text.trim(),
-          notes: _notes.text.trim().isEmpty
-              ? 'No additional care requirements'
-              : _notes.text.trim(),
-          present: false)
-    ];
-    if (!widget.driver) {
-      ref.read(selectedChildProvider.notifier).state = existing.length;
-    }
-    Navigator.pop(context);
-    ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Saved in this UI preview session')));
-  }
-
-  @override
-  Widget build(BuildContext context) => BusScaffold(
-      title: widget.driver ? 'Add Student' : 'Add your child',
-      padding: const EdgeInsets.all(32),
-      child: Form(
-          key: _formKey,
-          child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            field('Student’s full name', _name),
-            choice(
-                'School',
-                _school,
-                ['Royal College, Colombo 07', 'Visakha Vidyalaya, Colombo 05'],
-                (v) => _school = v),
-            choice(
-                'Grade / class',
-                _grade,
-                ['Grade 6 · Class A', 'Grade 3 · Class B', 'Grade 7 · Class A'],
-                (v) => _grade = v),
-            if (!widget.driver)
-              choice(
-                  'Relationship to student',
-                  _relationship,
-                  ['Mother / guardian', 'Father / guardian'],
-                  (v) => _relationship = v),
-            field('Pickup area', _pickup),
-            if (widget.driver) ...[
-              field('Parent’s name', _parent),
-              field('Mobile number', _phone, keyboard: TextInputType.phone)
-            ] else
-              const Padding(
-                  padding: EdgeInsets.only(bottom: 20),
-                  child:
-                      DetailField('SELECT DRIVER', 'D-024 · Sunil Fernando')),
-            field('Additional care notes (optional)', _notes, required: false),
-            const Text('Shared only with authorised school transport staff.',
-                style: TextStyle(color: busMuted, fontSize: 11)),
-            const SizedBox(height: 20),
-            SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                    onPressed: save,
-                    child: Text(widget.driver
-                        ? 'Save student'
-                        : 'Save child & continue'))),
-          ])));
 }
 
 class StudentListScreen extends ConsumerStatefulWidget {
