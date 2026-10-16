@@ -14,6 +14,8 @@ class SelectChildScreen extends ConsumerWidget {
     if (loading.isLoading || loading.hasError || students.isEmpty) {
       return Scaffold(
           appBar: AppBar(title: const Text('Your children')),
+          bottomNavigationBar:
+              BusBottomBar(onSwitch: () => signOut(context, ref)),
           body: Center(
               child: loading.isLoading
                   ? const CircularProgressIndicator()
@@ -32,7 +34,9 @@ class SelectChildScreen extends ConsumerWidget {
     }
     return Scaffold(
         backgroundColor: busBlue,
-        appBar: AppBar(),
+        appBar: AppBar(title: const Text('Your children')),
+        bottomNavigationBar:
+            BusBottomBar(onSwitch: () => signOut(context, ref)),
         body: SafeArea(
             child: Center(
                 child: SingleChildScrollView(

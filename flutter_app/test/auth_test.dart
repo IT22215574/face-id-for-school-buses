@@ -43,7 +43,7 @@ void main() {
       WidgetTester tester, String email, String password) async {
     await tester.enterText(find.byType(TextFormField).at(0), email);
     await tester.enterText(find.byType(TextFormField).at(1), password);
-    await tester.tap(find.text('Login'));
+    await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
   }
 

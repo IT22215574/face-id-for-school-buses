@@ -16,6 +16,8 @@ class DashboardScreen extends ConsumerWidget {
     if (loading.isLoading || loading.hasError || students.isEmpty) {
       return Scaffold(
           appBar: AppBar(title: const Text('Your children')),
+          bottomNavigationBar:
+              BusBottomBar(onSwitch: () => signOut(context, ref)),
           body: Center(
               child: loading.isLoading
                   ? const CircularProgressIndicator()
@@ -92,7 +94,7 @@ class DashboardScreen extends ConsumerWidget {
                               const SizedBox(height: 18),
                               Row(children: [
                                 const Expanded(
-                                    child: Text('School Bus Detector',
+                                    child: Text('Live bus tracking',
                                         style: TextStyle(
                                             fontSize: 18,
                                             fontWeight: FontWeight.bold))),
@@ -100,7 +102,7 @@ class DashboardScreen extends ConsumerWidget {
                                     style: TextButton.styleFrom(
                                         backgroundColor: busBlue,
                                         foregroundColor: Colors.white,
-                                        minimumSize: const Size(105, 24),
+                                        minimumSize: const Size(105, 48),
                                         padding: const EdgeInsets.symmetric(
                                             horizontal: 12),
                                         tapTargetSize:

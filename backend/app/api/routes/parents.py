@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.api.deps import get_db, require_parent
 from app.models.parent import Parent
 from app.models.student import Student
-from app.schemas.parent import ParentOut
+from app.schemas.parent import ParentOut, ProfileUpdate
 from app.schemas.student import StudentOut
 
 router = APIRouter(tags=["Parents"])
@@ -49,3 +50,27 @@ def read_my_transport(current_parent: Parent = Depends(require_parent), db: Sess
             "present": bool(latest_event and latest_event.event_type.value == "BOARDED"),
             "parent": guardian.name if guardian else "", "phone": guardian.phone if guardian else ""})
     return result
+
+
+@router.patch("/me", response_model=ParentOut)
+def update_me(payload: ProfileUpdate, current_parent: Parent = Depends(require_parent), db: Session = Depends(get_db)):
+    account = db.get(Parent, current_parent.id)
+    if account is None:
+        raise HTTPException(status_code=401, detail="Account not found")
+    account.name = payload.name
+    account.phone = payload.phone
+    account.email = str(payload.email)
+    # Keep the contact information shown to parents in sync with the driver account.
+    if account.role == "DRIVER":
+        from app.models.payroll import Driver
+        with db.no_autoflush:
+            for driver in db.query(Driver).filter_by(user_id=account.id).all():
+                driver.name = account.name
+                driver.phone = account.phone
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Email or phone is already in use")
+    db.refresh(account)
+    return account

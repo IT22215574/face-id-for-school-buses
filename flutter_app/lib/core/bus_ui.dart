@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../features/profile/profile_screen.dart';
 
 const busBlue = Color(0xFF1A73E8);
 const busBackground = Color(0xFFF5F5F5);
@@ -80,33 +81,52 @@ class BusBottomBar extends StatelessWidget {
   final VoidCallback? onHome;
   final VoidCallback? onSwitch;
   @override
-  Widget build(BuildContext context) => Container(
-        decoration: const BoxDecoration(
-            color: busBlue,
-            borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+  Widget build(BuildContext context) => Material(
+        color: Colors.white,
+        elevation: 8,
         child: SafeArea(
             top: false,
-            child: SizedBox(
-                height: 48,
-                child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      IconButton(
-                          tooltip: onSwitch == null ? 'Back' : 'Sign out',
-                          onPressed: onSwitch ??
-                              () => Navigator.of(context).maybePop(),
-                          icon: const DesignAsset('80ba2.svg',
-                              width: 16, height: 16)),
-                      IconButton(
-                          tooltip: 'Home',
-                          onPressed: onHome ??
-                              () => Navigator.of(context).popUntil((route) =>
-                                  route.settings.name == 'transport-home' ||
-                                  route.isFirst),
-                          icon: const DesignAsset('8e6b2.svg',
-                              width: 29, height: 29)),
-                      const SizedBox(width: 48),
-                    ]))),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Row(children: [
+                Expanded(
+                    child: TextButton.icon(
+                        onPressed: onHome ??
+                            () => Navigator.of(context).popUntil((route) =>
+                                route.settings.name == 'transport-home' ||
+                                route.isFirst),
+                        icon: const Icon(Icons.home_rounded),
+                        label: const Text('Home'))),
+                Expanded(
+                    child: TextButton.icon(
+                        onPressed: () {
+                          if (ModalRoute.of(context)?.settings.name ==
+                              'profile') {
+                            return;
+                          }
+                          openScreen(context, const ProfileScreen(),
+                              name: 'profile');
+                        },
+                        icon: const Icon(Icons.account_circle_outlined),
+                        label: const Text('Profile'))),
+                if (onSwitch != null)
+                  Expanded(
+                      child: Tooltip(
+                          message: 'Sign out',
+                          child: TextButton.icon(
+                              onPressed: onSwitch,
+                              icon: const Icon(Icons.logout),
+                              label: const Text('Sign out'))))
+                else
+                  Expanded(
+                      child: TextButton.icon(
+                          onPressed: Navigator.of(context).canPop()
+                              ? () => Navigator.of(context).maybePop()
+                              : null,
+                          icon: const Icon(Icons.arrow_back),
+                          label: const Text('Back'))),
+              ]),
+            )),
       );
 }
 
@@ -214,13 +234,13 @@ class HomeHeader extends StatelessWidget {
                     ]))),
         Column(children: [
           SizedBox(
-              height: 105,
+              height: 80 + MediaQuery.paddingOf(context).top,
               child: Align(
                   alignment: Alignment.topRight,
                   child: Padding(
                       padding: EdgeInsets.only(
                           top: 28 + MediaQuery.paddingOf(context).top,
-                          right: 38),
+                          right: 24),
                       child: action))),
           Padding(
               padding: EdgeInsets.symmetric(

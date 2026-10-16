@@ -15,6 +15,8 @@ class DriverScreen extends ConsumerWidget {
     if (loading.isLoading || loading.hasError) {
       return Scaffold(
           appBar: AppBar(title: const Text('Driver transport')),
+          bottomNavigationBar:
+              BusBottomBar(onSwitch: () => signOut(context, ref)),
           body: Center(
               child: loading.isLoading
                   ? const CircularProgressIndicator()

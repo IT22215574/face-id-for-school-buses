@@ -31,6 +31,15 @@ from the repository root, substitute that URL:
 bash scripts/build-internet-apk.sh https://YOUR-DOMAIN.ngrok-free.app
 ```
 
+On this Mac, the existing Android SDK is in `/tmp/schoolbus-android-sdk`.
+If Flutter cannot locate it, use:
+
+```sh
+ANDROID_HOME=/tmp/schoolbus-android-sdk JAVA_HOME=/opt/homebrew/opt/openjdk@17/libexec/openjdk.jdk/Contents/Home bash scripts/build-internet-apk.sh https://YOUR-DOMAIN.ngrok-free.app
+```
+
+The SDK is in temporary storage and may need reinstalling if macOS removes it.
+
 Install `flutter_app/build/app/outputs/flutter-apk/app-release.apk` on the remote
 Android phone, replacing the older build. This project currently signs release
 APKs with its debug certificate for testing. If Android reports a certificate

@@ -18,6 +18,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final emailController = TextEditingController();
   final passwordController = TextEditingController();
   bool isLoading = false;
+  bool hidePassword = true;
   String? error;
   @override
   void dispose() {
@@ -104,10 +105,19 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                             TextFormField(
                                 controller: passwordController,
                                 enabled: !isLoading,
-                                obscureText: true,
+                                obscureText: hidePassword,
                                 autofillHints: const [AutofillHints.password],
-                                decoration: const InputDecoration(
-                                    labelText: 'Password'),
+                                decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    suffixIcon: IconButton(
+                                        tooltip: hidePassword
+                                            ? 'Show password'
+                                            : 'Hide password',
+                                        onPressed: () => setState(
+                                            () => hidePassword = !hidePassword),
+                                        icon: Icon(hidePassword
+                                            ? Icons.visibility_outlined
+                                            : Icons.visibility_off_outlined))),
                                 validator: (value) =>
                                     value == null || value.isEmpty
                                         ? 'Enter your password'
@@ -127,6 +137,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     icon: const Icon(Icons.login),
                                     label: Text(isLoading
                                         ? 'Signing in...'
-                                        : 'Login'))),
+                                        : 'Sign in'))),
                           ])))))));
 }
