@@ -33,7 +33,7 @@ class SelectChildScreen extends ConsumerWidget {
                     ])));
     }
     return Scaffold(
-        backgroundColor: busBlue,
+        backgroundColor: const Color(0xFF132D65),
         appBar: AppBar(title: const Text('Your children')),
         bottomNavigationBar:
             BusBottomBar(onSwitch: () => signOut(context, ref)),
@@ -118,7 +118,7 @@ class _StudentListScreenState extends ConsumerState<StudentListScreen> {
                     child: ListTile(
                         contentPadding: EdgeInsets.zero,
                         leading: const CircleAvatar(
-                            backgroundColor: busBlue,
+                            backgroundColor: Color(0xFF132D65),
                             child: Icon(Icons.person, color: Colors.white)),
                         title: Text(student.name),
                         subtitle: Text(student.grade),

@@ -43,8 +43,7 @@ class DriverScreen extends ConsumerWidget {
                                   minimumSize: const Size(48, 48)),
                               onPressed: () =>
                                   openScreen(context, const SosScreen()),
-                              icon: const DesignAsset('41648.svg',
-                                  width: 29, height: 29)),
+                              icon: const Icon(Icons.sos_rounded)),
                           details: Text(
                               '${students.isEmpty ? "Driver" : students.first.driverName}\n${students.isEmpty ? "No students assigned" : students.first.plate}\n${students.length} assigned students',
                               style: const TextStyle(
@@ -144,24 +143,17 @@ class DriverAction extends StatelessWidget {
                 child: InkWell(
                     onTap: onTap,
                     borderRadius: BorderRadius.circular(20),
-                    child: composite
-                        ? const DesignAsset('fde92.svg',
-                            width: 107, height: 100)
-                        : BusCard(
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 13, horizontal: 8),
-                            child: SizedBox(
-                                height: 65,
-                                width: 83,
-                                child: Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      const DesignAsset('09a03.svg',
-                                          width: 65, height: 65),
-                                      if (asset != null)
-                                        DesignAsset(asset!,
-                                            width: 37, height: 37)
-                                    ]))))),
+                    child: BusCard(
+                        padding: const EdgeInsets.symmetric(
+                            vertical: 20, horizontal: 20),
+                        child: Icon(
+                            label == 'Students'
+                                ? Icons.groups_rounded
+                                : label == 'Assignments'
+                                    ? Icons.assignment_outlined
+                                    : Icons.fact_check_outlined,
+                            size: 32,
+                            color: busBlue)))),
             const SizedBox(height: 8),
             Text(label, style: const TextStyle(fontSize: 11)),
           ])));

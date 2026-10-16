@@ -5,8 +5,8 @@ class NotificationsScreen extends StatelessWidget {
   const NotificationsScreen({super.key});
   @override
   Widget build(BuildContext context) => BusScaffold(
-      title: 'Notification',
-      padding: const EdgeInsets.symmetric(vertical: 36),
+      title: 'Notifications',
+      padding: const EdgeInsets.all(24),
       child: Column(children: [
         for (final item in const [
           ('Reminder!', 'The morning pickup is at 07:30 AM.', '07:00 AM'),
@@ -19,23 +19,25 @@ class NotificationsScreen extends StatelessWidget {
             '03:00 PM'
           ),
         ])
-          Container(
-              margin: const EdgeInsets.only(bottom: 2),
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 22),
-              constraints: const BoxConstraints(minHeight: 123),
-              color: const Color(0xFFDFE2E7),
-              child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+          Padding(
+              padding: const EdgeInsets.only(bottom: 14),
+              child: BusCard(
+                  child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
                     Row(children: [
+                      const Icon(Icons.notifications_active_outlined,
+                          color: busBlue, size: 20),
+                      const SizedBox(width: 10),
                       Expanded(
                           child: Text(item.$1,
-                              style: const TextStyle(fontSize: 20))),
+                              style: const TextStyle(
+                                  fontSize: 16, fontWeight: FontWeight.w600))),
                       Text(item.$3,
                           style: const TextStyle(color: busMuted, fontSize: 13))
                     ]),
                     const SizedBox(height: 12),
                     Text(item.$2, style: const TextStyle(color: busMuted)),
-                  ])),
+                  ]))),
       ]));
 }

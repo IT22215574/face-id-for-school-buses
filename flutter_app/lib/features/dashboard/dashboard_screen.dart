@@ -51,8 +51,7 @@ class DashboardScreen extends ConsumerWidget {
                             tooltip: 'Notifications',
                             onPressed: () => openScreen(
                                 context, const NotificationsScreen()),
-                            icon: const DesignAsset('29a4b.svg',
-                                width: 27, height: 27)),
+                            icon: const Icon(Icons.notifications_none_rounded)),
                         details: Column(
                             mainAxisSize: MainAxisSize.min,
                             crossAxisAlignment: CrossAxisAlignment.start,
@@ -84,13 +83,31 @@ class DashboardScreen extends ConsumerWidget {
                                       height: 1.2,
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
-                              const Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Expanded(child: JourneyCard(morning: true)),
-                                    SizedBox(width: 16),
-                                    Expanded(child: JourneyCard(morning: false))
-                                  ]),
+                              LayoutBuilder(builder: (context, constraints) {
+                                if (constraints.maxWidth < 320 ||
+                                    MediaQuery.textScalerOf(context).scale(1) >
+                                        1.3) {
+                                  return const Column(children: [
+                                    SizedBox(
+                                        width: double.infinity,
+                                        child: JourneyCard(morning: true)),
+                                    SizedBox(height: 16),
+                                    SizedBox(
+                                        width: double.infinity,
+                                        child: JourneyCard(morning: false)),
+                                  ]);
+                                }
+                                return const Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                          child: JourneyCard(morning: true)),
+                                      SizedBox(width: 16),
+                                      Expanded(
+                                          child: JourneyCard(morning: false)),
+                                    ]);
+                              }),
                               const SizedBox(height: 18),
                               Row(children: [
                                 const Expanded(
@@ -124,26 +141,34 @@ class DashboardScreen extends ConsumerWidget {
                                     openScreen(context, const MapScreen()),
                               )),
                               const SizedBox(height: 20),
-                              Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceEvenly,
+                              Wrap(
+                                  alignment: WrapAlignment.center,
+                                  spacing: 16,
                                   children: [
-                                    IconButton(
-                                        tooltip: 'Driver Profile',
-                                        onPressed: () => showTransportProfile(
-                                            context,
-                                            school: false,
-                                            student: student),
-                                        icon: const DesignAsset('70e73.svg',
-                                            width: 82, height: 81)),
-                                    IconButton(
-                                        tooltip: 'School Profile',
-                                        onPressed: () => showTransportProfile(
-                                            context,
-                                            school: true,
-                                            student: student),
-                                        icon: const DesignAsset('6d26b.svg',
-                                            width: 82, height: 81)),
+                                    Tooltip(
+                                        message: 'Driver Profile',
+                                        child: TextButton.icon(
+                                            label: const Text('Driver'),
+                                            onPressed: () =>
+                                                showTransportProfile(context,
+                                                    school: false,
+                                                    student: student),
+                                            icon: const Icon(
+                                                Icons.badge_outlined,
+                                                size: 24,
+                                                color: busBlue))),
+                                    Tooltip(
+                                        message: 'School Profile',
+                                        child: TextButton.icon(
+                                            label: const Text('School'),
+                                            onPressed: () =>
+                                                showTransportProfile(context,
+                                                    school: true,
+                                                    student: student),
+                                            icon: const Icon(
+                                                Icons.school_outlined,
+                                                size: 24,
+                                                color: busBlue))),
                                   ]),
                               const SizedBox(height: 24),
                             ])),
@@ -174,13 +199,13 @@ class JourneyCard extends StatelessWidget {
                       fontSize: 14, fontWeight: FontWeight.bold)))
         ]),
         const SizedBox(height: 12),
-        const Text('Pickup Time',
+        const Text('Sample pickup',
             style: TextStyle(color: busMuted, fontSize: 14)),
         const SizedBox(height: 4),
         Text(morning ? '07:30 AM' : '03:00 PM',
             style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
         const SizedBox(height: 12),
-        const Text('Dropoff Time',
+        const Text('Sample dropoff',
             style: TextStyle(color: busMuted, fontSize: 14)),
         const SizedBox(height: 4),
         Text(morning ? '08:15 AM' : '03:45 PM',

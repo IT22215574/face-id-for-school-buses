@@ -68,75 +68,102 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      body: SafeArea(
-          child: Center(
-              child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(24),
-                  child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Form(
-                          key: _formKey,
-                          child:
-                              Column(mainAxisSize: MainAxisSize.min, children: [
-                            const Icon(Icons.directions_bus,
-                                size: 72, color: busBlue),
-                            const SizedBox(height: 24),
-                            const Text('School Bus Sign In',
-                                style: TextStyle(
-                                    fontSize: 28, fontWeight: FontWeight.bold)),
-                            const SizedBox(height: 12),
-                            const Text(
-                                'Sign in with your parent or driver account.',
-                                textAlign: TextAlign.center),
-                            const SizedBox(height: 32),
-                            TextFormField(
-                                controller: emailController,
-                                enabled: !isLoading,
-                                keyboardType: TextInputType.emailAddress,
-                                autocorrect: false,
-                                autofillHints: const [AutofillHints.username],
-                                decoration:
-                                    const InputDecoration(labelText: 'Email'),
-                                validator: (value) =>
-                                    value == null || !value.trim().contains('@')
-                                        ? 'Enter a valid email address'
-                                        : null),
-                            const SizedBox(height: 16),
-                            TextFormField(
-                                controller: passwordController,
-                                enabled: !isLoading,
-                                obscureText: hidePassword,
-                                autofillHints: const [AutofillHints.password],
-                                decoration: InputDecoration(
-                                    labelText: 'Password',
-                                    suffixIcon: IconButton(
-                                        tooltip: hidePassword
-                                            ? 'Show password'
-                                            : 'Hide password',
-                                        onPressed: () => setState(
-                                            () => hidePassword = !hidePassword),
-                                        icon: Icon(hidePassword
-                                            ? Icons.visibility_outlined
-                                            : Icons.visibility_off_outlined))),
-                                validator: (value) =>
-                                    value == null || value.isEmpty
-                                        ? 'Enter your password'
-                                        : null,
-                                onFieldSubmitted: (_) => _login()),
-                            const SizedBox(height: 24),
-                            if (error != null) ...[
-                              Text(error!,
-                                  style: const TextStyle(color: Colors.red),
-                                  textAlign: TextAlign.center),
-                              const SizedBox(height: 16)
-                            ],
-                            SizedBox(
-                                width: double.infinity,
-                                child: FilledButton.icon(
-                                    onPressed: isLoading ? null : _login,
-                                    icon: const Icon(Icons.login),
-                                    label: Text(isLoading
-                                        ? 'Signing in...'
-                                        : 'Sign in'))),
-                          ])))))));
+      body: Container(
+          decoration: const BoxDecoration(gradient: busSoftGradient),
+          child: SafeArea(
+              child: Center(
+                  child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(24),
+                      child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: Form(
+                              key: _formKey,
+                              child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Container(
+                                        padding: const EdgeInsets.all(24),
+                                        decoration: BoxDecoration(
+                                            gradient: busGradient,
+                                            borderRadius:
+                                                BorderRadius.circular(28),
+                                            boxShadow: const [
+                                              BoxShadow(
+                                                  color: Color(0x332563EB),
+                                                  blurRadius: 28,
+                                                  offset: Offset(0, 12))
+                                            ]),
+                                        child: const Icon(
+                                            Icons.directions_bus_rounded,
+                                            size: 48,
+                                            color: Colors.white)),
+                                    const SizedBox(height: 24),
+                                    const Text('School Bus Sign In',
+                                        style: TextStyle(
+                                            fontSize: 28,
+                                            fontWeight: FontWeight.bold)),
+                                    const SizedBox(height: 12),
+                                    const Text(
+                                        'Sign in with your parent or driver account.',
+                                        textAlign: TextAlign.center),
+                                    const SizedBox(height: 32),
+                                    TextFormField(
+                                        controller: emailController,
+                                        enabled: !isLoading,
+                                        keyboardType:
+                                            TextInputType.emailAddress,
+                                        autocorrect: false,
+                                        autofillHints: const [
+                                          AutofillHints.username
+                                        ],
+                                        decoration: const InputDecoration(
+                                            labelText: 'Email'),
+                                        validator: (value) => value == null ||
+                                                !value.trim().contains('@')
+                                            ? 'Enter a valid email address'
+                                            : null),
+                                    const SizedBox(height: 16),
+                                    TextFormField(
+                                        controller: passwordController,
+                                        enabled: !isLoading,
+                                        obscureText: hidePassword,
+                                        autofillHints: const [
+                                          AutofillHints.password
+                                        ],
+                                        decoration: InputDecoration(
+                                            labelText: 'Password',
+                                            suffixIcon: IconButton(
+                                                tooltip: hidePassword
+                                                    ? 'Show password'
+                                                    : 'Hide password',
+                                                onPressed: () => setState(() =>
+                                                    hidePassword =
+                                                        !hidePassword),
+                                                icon: Icon(hidePassword
+                                                    ? Icons.visibility_outlined
+                                                    : Icons
+                                                        .visibility_off_outlined))),
+                                        validator: (value) =>
+                                            value == null || value.isEmpty
+                                                ? 'Enter your password'
+                                                : null,
+                                        onFieldSubmitted: (_) => _login()),
+                                    const SizedBox(height: 24),
+                                    if (error != null) ...[
+                                      Text(error!,
+                                          style: const TextStyle(
+                                              color: Colors.red),
+                                          textAlign: TextAlign.center),
+                                      const SizedBox(height: 16)
+                                    ],
+                                    SizedBox(
+                                        width: double.infinity,
+                                        child: FilledButton.icon(
+                                            onPressed:
+                                                isLoading ? null : _login,
+                                            icon: const Icon(Icons.login),
+                                            label: Text(isLoading
+                                                ? 'Signing in...'
+                                                : 'Sign in'))),
+                                  ]))))))));
 }
