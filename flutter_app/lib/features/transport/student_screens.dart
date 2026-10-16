@@ -6,7 +6,8 @@ import 'transport_state.dart';
 import '../auth/sign_out.dart';
 
 class SelectChildScreen extends ConsumerWidget {
-  const SelectChildScreen({super.key});
+  const SelectChildScreen({super.key, this.switching = false});
+  final bool switching;
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final loading = ref.watch(transportLoadProvider);
@@ -33,58 +34,94 @@ class SelectChildScreen extends ConsumerWidget {
                     ])));
     }
     return Scaffold(
-        backgroundColor: const Color(0xFF132D65),
-        appBar: AppBar(title: const Text('Your children')),
-        bottomNavigationBar:
-            BusBottomBar(onSwitch: () => signOut(context, ref)),
-        body: SafeArea(
-            child: Center(
-                child: SingleChildScrollView(
-                    padding: const EdgeInsets.all(32),
-                    child: Column(children: [
-                      const Text('Select child',
-                          style: TextStyle(
-                              fontSize: 30,
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold)),
-                      const SizedBox(height: 36),
-                      Wrap(
-                          spacing: 30,
-                          runSpacing: 24,
-                          alignment: WrapAlignment.center,
-                          children: [
-                            for (var i = 0; i < students.length; i++)
-                              SizedBox(
-                                  width: 130,
-                                  child: Column(children: [
-                                    IconButton(
-                                        tooltip: students[i].name,
-                                        onPressed: () {
-                                          ref
-                                              .read(selectedChildProvider
-                                                  .notifier)
-                                              .state = i;
-                                          Navigator.of(context).pushReplacement(
-                                              MaterialPageRoute<void>(
-                                                  settings: const RouteSettings(
-                                                      name: 'transport-home'),
-                                                  builder: (_) =>
-                                                      const DashboardScreen()));
-                                        },
-                                        icon: DesignAsset(
-                                            i.isEven
-                                                ? 'f0a5b.svg'
-                                                : 'a17df.svg',
-                                            width: 110,
-                                            height: 110)),
+      appBar: AppBar(
+        title: const Text('Your children'),
+        flexibleSpace: const DecoratedBox(
+            decoration: BoxDecoration(gradient: busGradient)),
+      ),
+      bottomNavigationBar: BusBottomBar(onSwitch: () => signOut(context, ref)),
+      body: SafeArea(
+          child: Center(
+              child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 600),
+        child: ListView(padding: const EdgeInsets.all(24), children: [
+          const Text('Who are we following today?',
+              style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.7)),
+          const SizedBox(height: 10),
+          const Text(
+              'Choose a child to see their journey, bus location and school details.',
+              style: TextStyle(color: busMuted, height: 1.5)),
+          const SizedBox(height: 28),
+          for (var i = 0; i < students.length; i++)
+            Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Tooltip(
+                  message: students[i].name,
+                  child: Material(
+                    color: Colors.white,
+                    clipBehavior: Clip.antiAlias,
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        side: const BorderSide(color: Color(0xFFE1E8F2))),
+                    child: InkWell(
+                        onTap: () {
+                          ref.read(selectedChildProvider.notifier).state = i;
+                          if (switching) {
+                            Navigator.of(context).pop();
+                          } else {
+                            Navigator.of(context).pushReplacement(
+                                MaterialPageRoute<void>(
+                                    settings: const RouteSettings(
+                                        name: 'transport-home'),
+                                    builder: (_) => const DashboardScreen()));
+                          }
+                        },
+                        child: Padding(
+                            padding: const EdgeInsets.all(20),
+                            child: Row(children: [
+                              Container(
+                                  width: 60,
+                                  height: 60,
+                                  decoration: BoxDecoration(
+                                      gradient: busSoftGradient,
+                                      borderRadius: BorderRadius.circular(20)),
+                                  child: const Icon(Icons.face_rounded,
+                                      color: busBlue, size: 32)),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                  child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
                                     Text(students[i].name,
-                                        textAlign: TextAlign.center,
                                         style: const TextStyle(
-                                            color: Colors.white)),
-                                  ]))
-                          ]),
-                      const SizedBox(height: 56),
-                    ])))));
+                                            fontSize: 18,
+                                            fontWeight: FontWeight.w700)),
+                                    if (students[i].grade.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(students[i].grade,
+                                          style:
+                                              const TextStyle(color: busMuted)),
+                                    ],
+                                    if (students[i].school.isNotEmpty) ...[
+                                      const SizedBox(height: 4),
+                                      Text(students[i].school,
+                                          style: const TextStyle(
+                                              fontSize: 12, color: busMuted)),
+                                    ],
+                                  ])),
+                              const SizedBox(width: 8),
+                              const Icon(Icons.arrow_forward_rounded,
+                                  color: busBlue, size: 22),
+                            ]))),
+                  ),
+                )),
+        ]),
+      ))),
+    );
   }
 }
 

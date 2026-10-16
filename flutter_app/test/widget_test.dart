@@ -64,6 +64,17 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Sam Driver'), findsOneWidget);
     expect(find.descendant(of: find.byType(BottomSheet), matching: find.text('BUS-24')), findsOneWidget);
+    Navigator.of(tester.element(find.byType(BottomSheet))).pop();
+    await tester.pumpAndSettle();
+    for (final name in ['Aisha', 'Kavindu']) {
+      await tester.ensureVisible(find.text('Switch child'));
+      await tester.tap(find.text('Switch child'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip(name));
+      await tester.pumpAndSettle();
+      expect(find.byType(DashboardScreen, skipOffstage: false), findsOneWidget);
+      expect(find.text(name), findsOneWidget);
+    }
     expect(tester.takeException(), isNull);
   });
   testWidgets('Parent with no assigned children sees an empty state',

@@ -4,9 +4,9 @@ import 'bus_ui.dart';
 class PremiumPageTransitions extends PageTransitionsBuilder {
   const PremiumPageTransitions();
   @override
-  Duration get transitionDuration => const Duration(milliseconds: 280);
+  Duration get transitionDuration => const Duration(milliseconds: 360);
   @override
-  Duration get reverseTransitionDuration => const Duration(milliseconds: 220);
+  Duration get reverseTransitionDuration => const Duration(milliseconds: 300);
   @override
   Widget buildTransitions<T>(
       PageRoute<T> route,
@@ -15,18 +15,21 @@ class PremiumPageTransitions extends PageTransitionsBuilder {
       Animation<double> secondaryAnimation,
       Widget child) {
     if (MediaQuery.disableAnimationsOf(context)) return child;
-    final curved = CurvedAnimation(
-        parent: animation,
-        curve: Curves.easeOutCubic,
-        reverseCurve: Curves.easeInCubic);
-    return FadeTransition(
-        opacity: curved,
-        child: SlideTransition(
-          position:
-              Tween<Offset>(begin: const Offset(0.025, 0.015), end: Offset.zero)
-                  .animate(curved),
-          child: child,
-        ));
+    final incoming = animation.drive(CurveTween(curve: Curves.easeInOutCubic));
+    final outgoing =
+        secondaryAnimation.drive(CurveTween(curve: Curves.easeInOutCubic));
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return SlideTransition(
+      position:
+          Tween<Offset>(begin: Offset.zero, end: Offset(rtl ? 0.22 : -0.22, 0))
+              .animate(outgoing),
+      child: SlideTransition(
+        position:
+            Tween<Offset>(begin: Offset(rtl ? -1 : 1, 0), end: Offset.zero)
+                .animate(incoming),
+        child: child,
+      ),
+    );
   }
 }
 

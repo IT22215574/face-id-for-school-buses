@@ -63,8 +63,8 @@ class DashboardScreen extends ConsumerWidget {
                                   style: const TextStyle(
                                       color: Colors.black, fontSize: 15)),
                               InkWell(
-                                  onTap: () => openScreen(
-                                      context, const SelectChildScreen()),
+                                  onTap: () => openScreen(context,
+                                      const SelectChildScreen(switching: true)),
                                   child: const Padding(
                                       padding:
                                           EdgeInsets.symmetric(vertical: 8),
