@@ -48,6 +48,7 @@ def read_my_transport(current_parent: Parent = Depends(require_parent), db: Sess
             "route_name": bus.route_name if bus else None,
             "driver_name": driver.name if driver else None, "driver_phone": driver.phone if driver else None,
             "present": bool(latest_event and latest_event.event_type.value == "BOARDED"),
+            "father_phone": student.father_phone, "mother_phone": student.mother_phone,
             "parent": guardian.name if guardian else "", "phone": guardian.phone if guardian else ""})
     return result
 

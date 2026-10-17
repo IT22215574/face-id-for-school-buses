@@ -23,6 +23,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
   final _name = TextEditingController();
   final _grade = TextEditingController();
   final _parentEmail = TextEditingController();
+  final _fatherPhone = TextEditingController();
+  final _motherPhone = TextEditingController();
   String? _school;
   String? _error;
   bool _saving = false;
@@ -32,6 +34,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
     _name.dispose();
     _grade.dispose();
     _parentEmail.dispose();
+    _fatherPhone.dispose();
+    _motherPhone.dispose();
     super.dispose();
   }
 
@@ -47,6 +51,8 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
         'grade': _grade.text.trim(),
         'school_id': _school,
         'parent_email': _parentEmail.text.trim().toLowerCase(),
+        'father_phone': _fatherPhone.text.trim(),
+        'mother_phone': _motherPhone.text.trim(),
       });
       ref.invalidate(transportLoadProvider);
       if (!mounted) return;
@@ -150,6 +156,25 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                               ? null
                               : 'Enter a valid parent email'),
                   const SizedBox(height: 24),
+                  for (final contact in [
+                    (_fatherPhone, 'Father’s mobile number (optional)'),
+                    (_motherPhone, 'Mother’s mobile number (optional)'),
+                  ]) ...[
+                    TextFormField(
+                        controller: contact.$1,
+                        enabled: !_saving,
+                        keyboardType: TextInputType.phone,
+                        maxLength: 32,
+                        decoration: InputDecoration(
+                            labelText: contact.$2,
+                            prefixIcon: const Icon(Icons.phone_outlined)),
+                        validator: (value) =>
+                            RegExp(r'^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$')
+                                    .hasMatch(value?.trim() ?? '')
+                                ? null
+                                : 'Enter a valid mobile number'),
+                    const SizedBox(height: 16),
+                  ],
                   if (_error != null)
                     Padding(
                         padding: const EdgeInsets.only(bottom: 16),

@@ -195,6 +195,16 @@ class StudentProfileScreen extends StatelessWidget {
                 const SizedBox(height: 24),
                 DetailField('MOBILE NUMBER',
                     student.phone.isEmpty ? 'Not provided' : student.phone),
+                DetailField(
+                    'FATHER’S MOBILE NUMBER',
+                    student.fatherPhone.isEmpty
+                        ? 'Not provided'
+                        : student.fatherPhone),
+                DetailField(
+                    'MOTHER’S MOBILE NUMBER',
+                    student.motherPhone.isEmpty
+                        ? 'Not provided'
+                        : student.motherPhone),
                 DetailField('ADDRESS', student.pickup),
                 DetailField('SCHOOL', student.school),
                 DetailField('ADDITIONAL CARE NOTES', student.notes),

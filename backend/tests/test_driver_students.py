@@ -22,12 +22,14 @@ def test_driver_adds_child_to_own_vehicle_and_parent_account():
         driver = Driver(user_id=user.id, bus_id=bus.id, name='Driver', phone='87654321', license_no='L', nic='N', status='ACTIVE')
         db.add(driver)
         db.commit()
-        payload = DriverStudentIn(name=' Child ', grade='3', school_id='KUR-MALIYADEVA', parent_email='PARENT@example.com')
+        payload = DriverStudentIn(name=' Child ', grade='3', school_id='KUR-MALIYADEVA', parent_email='PARENT@example.com', father_phone='0711234567', mother_phone='+94 771234567')
         result = add_driver_student(payload, user, db)
         assert result['bus_id'] == bus.id
         assert db.get(StudentTransport, result['id']).bus_id == bus.id
         assert db.get(ParentStudent, (parent.id, result['id'])) is not None
         assert read_my_transport(user, db)[0]['name'] == 'Child'
+        assert read_my_transport(user, db)[0]['father_phone'] == '0711234567'
+        assert read_my_transport(parent, db)[0]['mother_phone'] == '+94 771234567'
         assert read_my_transport(parent, db)[0]['id'] == result['id']
         with pytest.raises(HTTPException) as error:
             add_driver_student(payload, parent, db)
@@ -43,3 +45,13 @@ def test_driver_adds_child_to_own_vehicle_and_parent_account():
             add_driver_student(payload, user, db)
         assert error.value.status_code == 403
     engine.dispose()
+
+
+def test_parent_phone_numbers_are_optional_and_validated():
+    from pydantic import ValidationError
+    values = dict(name='Child', grade='3', school_id='KUR-MALIYADEVA', parent_email='p@example.com')
+    assert DriverStudentIn(**values).father_phone == ''
+    assert DriverStudentIn(**values).mother_phone == ''
+    for field in ['father_phone', 'mother_phone']:
+        with pytest.raises(ValidationError):
+            DriverStudentIn(**values, **{field: 'invalid'})

@@ -66,6 +66,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byType(TextFormField).at(2), 'parent@example.com');
+    await tester.enterText(find.byType(TextFormField).at(3), '0711234567');
+    await tester.enterText(find.byType(TextFormField).at(4), '+94 771234567');
     await tester.ensureVisible(find.text('Add to my vehicle'));
     await tester.tap(find.text('Add to my vehicle'));
     await tester.pumpAndSettle();
@@ -73,7 +75,9 @@ void main() {
       'name': 'New Child',
       'grade': 'Grade 3',
       'school_id': 'KUR-MALIYADEVA',
-      'parent_email': 'parent@example.com'
+      'parent_email': 'parent@example.com',
+      'father_phone': '0711234567',
+      'mother_phone': '+94 771234567'
     });
     expect(find.text('Student added to your vehicle'), findsOneWidget);
     expect(tester.takeException(), isNull);

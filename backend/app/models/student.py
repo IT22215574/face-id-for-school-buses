@@ -19,6 +19,8 @@ class Student(Base):
     name: Mapped[str] = mapped_column(String(120), nullable=False)
     grade: Mapped[str] = mapped_column(String(30), nullable=False, default="N/A")
     school_id: Mapped[str] = mapped_column(String(80), nullable=False, index=True)
+    father_phone: Mapped[str] = mapped_column(String(32), nullable=False, default="", server_default="")
+    mother_phone: Mapped[str] = mapped_column(String(32), nullable=False, default="", server_default="")
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), nullable=False)
 
     parents: Mapped[list["Parent"]] = relationship(

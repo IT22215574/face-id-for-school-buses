@@ -10,6 +10,8 @@ class TransportStudent {
       this.grade = '',
       this.parent = '',
       this.phone = '',
+      this.fatherPhone = '',
+      this.motherPhone = '',
       this.pickup = 'Kurunegala',
       this.notes = '',
       this.present = false,
@@ -19,6 +21,7 @@ class TransportStudent {
   final int? id, busId;
   final String name, school, grade, parent, phone, pickup, notes;
   final String driverName, driverPhone, plate;
+  final String fatherPhone, motherPhone;
   final bool present;
   factory TransportStudent.fromJson(Map<String, dynamic> data) =>
       TransportStudent(
@@ -30,6 +33,8 @@ class TransportStudent {
           grade: data['grade'] as String,
           parent: data['parent'] as String,
           phone: data['phone'] as String,
+          fatherPhone: data['father_phone'] as String? ?? '',
+          motherPhone: data['mother_phone'] as String? ?? '',
           driverName: data['driver_name'] as String? ?? 'No driver assigned',
           driverPhone: data['driver_phone'] as String? ?? '',
           plate: data['plate_no'] as String? ?? 'No bus assigned');

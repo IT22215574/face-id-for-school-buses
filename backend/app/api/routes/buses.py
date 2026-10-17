@@ -90,6 +90,8 @@ class DriverStudentIn(BaseModel):
     grade: str = Field(min_length=1, max_length=30)
     school_id: str = Field(min_length=1, max_length=80)
     parent_email: str = Field(min_length=3, max_length=255)
+    father_phone: str = Field(default="", max_length=32, pattern=r"^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$")
+    mother_phone: str = Field(default="", max_length=32, pattern=r"^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$")
 
 
 @router.post("/driver/students", status_code=status.HTTP_201_CREATED)
@@ -106,7 +108,8 @@ def add_driver_student(payload: DriverStudentIn, current_user=Depends(require_pa
     parent = db.query(Parent).filter(Parent.email == payload.parent_email.lower(), Parent.role == "PARENT").first()
     if parent is None:
         raise HTTPException(status_code=404, detail="No parent account found with that email. Ask the parent to register first.")
-    student = Student(name=payload.name, grade=payload.grade, school_id=payload.school_id)
+    student = Student(name=payload.name, grade=payload.grade, school_id=payload.school_id,
+                      father_phone=payload.father_phone, mother_phone=payload.mother_phone)
     try:
         db.add(student)
         db.flush()
