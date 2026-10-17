@@ -66,8 +66,20 @@ void main() {
     await tester.pumpAndSettle();
     await tester.enterText(
         find.byType(TextFormField).at(2), 'parent@example.com');
-    await tester.enterText(find.byType(TextFormField).at(3), '0711234567');
-    await tester.enterText(find.byType(TextFormField).at(4), '+94 771234567');
+    await tester.enterText(find.byType(TextFormField).at(3), 'abc071123456789');
+    expect(
+        tester
+            .widget<TextFormField>(find.byType(TextFormField).at(3))
+            .controller!
+            .text,
+        '0711234567');
+    await tester.enterText(find.byType(TextFormField).at(4), '077');
+    await tester.ensureVisible(find.text('Add to my vehicle'));
+    await tester.tap(find.text('Add to my vehicle'));
+    await tester.pumpAndSettle();
+    expect(adapter.saved, isNull);
+    expect(find.text('Enter exactly 10 digits'), findsOneWidget);
+    await tester.enterText(find.byType(TextFormField).at(4), '0771234567');
     await tester.ensureVisible(find.text('Add to my vehicle'));
     await tester.tap(find.text('Add to my vehicle'));
     await tester.pumpAndSettle();
@@ -77,7 +89,7 @@ void main() {
       'school_id': 'KUR-MALIYADEVA',
       'parent_email': 'parent@example.com',
       'father_phone': '0711234567',
-      'mother_phone': '+94 771234567'
+      'mother_phone': '0771234567'
     });
     expect(find.text('Student added to your vehicle'), findsOneWidget);
     expect(tester.takeException(), isNull);

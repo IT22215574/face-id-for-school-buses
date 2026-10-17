@@ -2,7 +2,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 from app.api.deps import get_db, require_parent
 from app.models.bus import Bus
@@ -89,9 +89,9 @@ class DriverStudentIn(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     grade: str = Field(min_length=1, max_length=30)
     school_id: str = Field(min_length=1, max_length=80)
-    parent_email: str = Field(min_length=3, max_length=255)
-    father_phone: str = Field(default="", max_length=32, pattern=r"^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$")
-    mother_phone: str = Field(default="", max_length=32, pattern=r"^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$")
+    parent_email: EmailStr = Field(max_length=254)
+    father_phone: str = Field(min_length=10, max_length=10, pattern=r"^[0-9]{10}$")
+    mother_phone: str = Field(min_length=10, max_length=10, pattern=r"^[0-9]{10}$")
 
 
 @router.post("/driver/students", status_code=status.HTTP_201_CREATED)

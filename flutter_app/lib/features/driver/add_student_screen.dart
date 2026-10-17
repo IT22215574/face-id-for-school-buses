@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
 import '../../providers/auth_provider.dart';
@@ -90,6 +91,7 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
           ]),
           data: (bus) => Form(
               key: _form,
+              autovalidateMode: AutovalidateMode.onUserInteraction,
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
@@ -110,8 +112,9 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                       maxLength: 120,
                       decoration:
                           const InputDecoration(labelText: 'Child’s full name'),
-                      validator: (value) => (value?.trim().length ?? 0) < 2
-                          ? 'Enter the child’s full name'
+                      validator: (value) => (value?.trim().length ?? 0) < 2 ||
+                              (value?.trim().length ?? 0) > 120
+                          ? 'Enter a name between 2 and 120 characters'
                           : null),
                   const SizedBox(height: 16),
                   TextFormField(
@@ -120,8 +123,9 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                       maxLength: 30,
                       decoration:
                           const InputDecoration(labelText: 'Grade / class'),
-                      validator: (value) => (value?.trim().isEmpty ?? true)
-                          ? 'Enter the grade or class'
+                      validator: (value) => (value?.trim().isEmpty ?? true) ||
+                              (value?.trim().length ?? 0) > 30
+                          ? 'Enter a grade or class between 1 and 30 characters'
                           : null),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -148,31 +152,35 @@ class _AddStudentScreenState extends ConsumerState<AddStudentScreen> {
                       enabled: !_saving,
                       keyboardType: TextInputType.emailAddress,
                       autocorrect: false,
+                      maxLength: 254,
                       decoration: const InputDecoration(
                           labelText: 'Parent’s registered email'),
                       validator: (value) =>
-                          RegExp(r'^[^\s@]+@[^\s@]+\.[^\s@]+$')
+                          RegExp(r"^[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+(?:\.[a-zA-Z0-9!#$%&'*+/=?^_`{|}~-]+)*@[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]*[a-zA-Z0-9])?)+$")
                                   .hasMatch(value?.trim() ?? '')
                               ? null
                               : 'Enter a valid parent email'),
                   const SizedBox(height: 24),
                   for (final contact in [
-                    (_fatherPhone, 'Father’s mobile number (optional)'),
-                    (_motherPhone, 'Mother’s mobile number (optional)'),
+                    (_fatherPhone, 'Father’s mobile number'),
+                    (_motherPhone, 'Mother’s mobile number'),
                   ]) ...[
                     TextFormField(
                         controller: contact.$1,
                         enabled: !_saving,
                         keyboardType: TextInputType.phone,
-                        maxLength: 32,
+                        maxLength: 10,
+                        inputFormatters: [
+                          FilteringTextInputFormatter.digitsOnly,
+                          LengthLimitingTextInputFormatter(10),
+                        ],
                         decoration: InputDecoration(
                             labelText: contact.$2,
                             prefixIcon: const Icon(Icons.phone_outlined)),
                         validator: (value) =>
-                            RegExp(r'^(?:|\+?[0-9][0-9 ()-]{6,30}[0-9])$')
-                                    .hasMatch(value?.trim() ?? '')
+                            RegExp(r'^[0-9]{10}$').hasMatch(value?.trim() ?? '')
                                 ? null
-                                : 'Enter a valid mobile number'),
+                                : 'Enter exactly 10 digits'),
                     const SizedBox(height: 16),
                   ],
                   if (_error != null)
