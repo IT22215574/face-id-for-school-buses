@@ -23,7 +23,7 @@ class SelectChildScreen extends ConsumerWidget {
                   : Column(mainAxisSize: MainAxisSize.min, children: [
                       Text(loading.hasError
                           ? 'Could not load assigned children.'
-                          : 'No children assigned. Ask your school to link your child and bus.'),
+                          : 'No children added yet. Ask your driver to add your child using your registered email.'),
                       TextButton(
                           onPressed: () =>
                               ref.invalidate(transportLoadProvider),

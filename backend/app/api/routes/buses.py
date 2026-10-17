@@ -81,3 +81,40 @@ def read_bus_route(bus_id: int, current_parent=Depends(require_parent), db: Sess
     bus = db.get(Bus, bus_id)
     return {"bus_id": bus_id, "name": bus.route_name, "sample": True,
             "stops": ROUTE if bus.route_name.startswith("Kurunegala") else []}
+
+
+class DriverStudentIn(BaseModel):
+    model_config = {"str_strip_whitespace": True, "extra": "forbid"}
+
+    name: str = Field(min_length=2, max_length=120)
+    grade: str = Field(min_length=1, max_length=30)
+    school_id: str = Field(min_length=1, max_length=80)
+    parent_email: str = Field(min_length=3, max_length=255)
+
+
+@router.post("/driver/students", status_code=status.HTTP_201_CREATED)
+def add_driver_student(payload: DriverStudentIn, current_user=Depends(require_parent), db: Session = Depends(get_db)):
+    from app.models.parent import Parent
+    from app.models.student import Student
+    from app.models.parent_student import ParentStudent
+    from app.models.student_transport import StudentTransport
+    from app.services.transport_service import SCHOOLS
+
+    bus = assigned_driver_bus(current_user, db)
+    if payload.school_id not in SCHOOLS:
+        raise HTTPException(status_code=422, detail="Choose a supported school")
+    parent = db.query(Parent).filter(Parent.email == payload.parent_email.lower(), Parent.role == "PARENT").first()
+    if parent is None:
+        raise HTTPException(status_code=404, detail="No parent account found with that email. Ask the parent to register first.")
+    student = Student(name=payload.name, grade=payload.grade, school_id=payload.school_id)
+    try:
+        db.add(student)
+        db.flush()
+        db.add(ParentStudent(parent_id=parent.id, student_id=student.id))
+        db.add(StudentTransport(student_id=student.id, bus_id=bus.id))
+        db.commit()
+        db.refresh(student)
+    except Exception:
+        db.rollback()
+        raise
+    return {"id": student.id, "name": student.name, "bus_id": bus.id}

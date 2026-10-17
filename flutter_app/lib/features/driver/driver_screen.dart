@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
 import '../auth/sign_out.dart';
+import 'add_student_screen.dart';
 import '../map/live_map_screen.dart';
 import '../transport/student_screens.dart';
 import '../transport/transport_state.dart';
@@ -101,13 +102,9 @@ class DriverScreen extends ConsumerWidget {
                                       onTap: () => openScreen(
                                           context, const StudentListScreen())),
                                   DriverAction(
-                                      label: 'Assignments',
-                                      asset: 'fde92.svg',
-                                      composite: true,
-                                      onTap: () => ScaffoldMessenger.of(context)
-                                          .showSnackBar(const SnackBar(
-                                              content: Text(
-                                                  'Your school administrator manages parent, child and bus assignments.')))),
+                                      label: 'Add student',
+                                      onTap: () => openScreen(
+                                          context, const AddStudentScreen())),
                                   DriverAction(
                                       label: 'Attendance',
                                       onTap: () => openScreen(
@@ -149,8 +146,8 @@ class DriverAction extends StatelessWidget {
                         child: Icon(
                             label == 'Students'
                                 ? Icons.groups_rounded
-                                : label == 'Assignments'
-                                    ? Icons.assignment_outlined
+                                : label == 'Add student'
+                                    ? Icons.person_add_alt_1_rounded
                                     : Icons.fact_check_outlined,
                             size: 32,
                             color: busBlue)))),

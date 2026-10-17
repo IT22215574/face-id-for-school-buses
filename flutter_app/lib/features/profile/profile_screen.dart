@@ -106,8 +106,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> {
                           textAlign: TextAlign.center,
                           style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 8),
-                      const Text(
-                          'Manage your contact details. Your school manages transport assignments.',
+                      Text(
+                          driver
+                              ? 'Manage your contact details. Add students to your vehicle from the home screen.'
+                              : 'Manage your contact details. Your driver can add your child to their vehicle.',
                           textAlign: TextAlign.center),
                       const SizedBox(height: 24),
                       TextFormField(
