@@ -1,6 +1,7 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_map/flutter_map.dart' as osm;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -99,7 +100,8 @@ void main() {
       ));
       await tester.pumpAndSettle();
       expect(find.byType(GoogleMap), findsNothing);
-      expect(find.textContaining('The map is unavailable'), findsOneWidget);
+      expect(find.byType(osm.FlutterMap), findsOneWidget);
+      expect(find.text('OpenStreetMap contributors'), findsOneWidget);
       expect(tester.takeException(), isNull);
     }, variant: TargetPlatformVariant({TargetPlatform.iOS}));
   }

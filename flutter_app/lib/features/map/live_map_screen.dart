@@ -6,6 +6,8 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
+import 'package:latlong2/latlong.dart' as geo;
+import 'testing_map.dart';
 import '../../providers/auth_provider.dart';
 import '../transport/transport_state.dart';
 
@@ -47,8 +49,9 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
 
   Future<void> _checkMapsConfiguration() async {
     var ready = true;
-    if (!kIsWeb && (defaultTargetPlatform == TargetPlatform.iOS ||
-        defaultTargetPlatform == TargetPlatform.android)) {
+    if (!kIsWeb &&
+        (defaultTargetPlatform == TargetPlatform.iOS ||
+            defaultTargetPlatform == TargetPlatform.android)) {
       try {
         ready = await const MethodChannel('school_bus/maps_configuration')
                 .invokeMethod<bool>('isConfigured') ??
@@ -311,14 +314,19 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
               child: _checkingMaps
                   ? const Center(child: CircularProgressIndicator())
                   : !_mapsReady
-                      ? const Center(
-                          child: Padding(
-                            padding: EdgeInsets.all(24),
-                            child: Text(
-                              'The map is unavailable in this build. Location updates are shown below.',
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
+                      ? TestingMap(
+                          point: _point == null
+                              ? null
+                              : geo.LatLng(_point!.latitude, _point!.longitude),
+                          route: _route
+                              .map((p) => geo.LatLng(p.latitude, p.longitude))
+                              .toList(),
+                          history: _history
+                              .map((p) => geo.LatLng(p.latitude, p.longitude))
+                              .toList(),
+                          stopNames:
+                              _stops.map((s) => s['name'] as String).toList(),
+                          plate: _plate,
                         )
                       : GoogleMap(
                           initialCameraPosition: const CameraPosition(
