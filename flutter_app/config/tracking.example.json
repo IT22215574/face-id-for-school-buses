@@ -1,0 +1,7 @@
+{
+  "FIREBASE_PROJECT_ID": "your-project-id",
+  "FIREBASE_API_KEY": "your-platform-firebase-api-key",
+  "FIREBASE_APP_ID": "your-platform-firebase-app-id",
+  "FIREBASE_MESSAGING_SENDER_ID": "your-sender-id",
+  "FIREBASE_DATABASE_URL": "https://your-database.REGION.firebasedatabase.app"
+}

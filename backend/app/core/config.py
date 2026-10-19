@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "change-me-in-production"
     JWT_ACCESS_EXPIRE_MIN: int = 30
     JWT_REFRESH_EXPIRE_DAYS: int = 30
+    FIREBASE_TRACKING_ENABLED: bool = False
     FCM_PROJECT_ID: str = "school-bus-parent-app"
     FCM_CREDENTIALS_JSON: str = '{"type":"service_account","project_id":"school-bus-parent-app"}'
     TWILIO_ACCOUNT_SID: str = ""

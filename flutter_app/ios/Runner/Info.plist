@@ -2,6 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
+	<key>UIBackgroundModes</key>
+	<array><string>location</string></array>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Continue sharing your trip with your chosen contacts while the app is in the background.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Share your phone location with the school bus service during your trip.</string>
 	<key>GoogleMapsAPIKey</key>

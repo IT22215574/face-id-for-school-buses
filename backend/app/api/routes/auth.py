@@ -38,3 +38,10 @@ def logout_user(payload: RefreshTokenRequest | None = None, current_parent=Depen
     refresh_value = payload.refresh_token if payload else None
     logout_parent(db, current_parent.id, refresh_value)
     return {"message": "Logged out successfully"}
+
+
+@router.post("/firebase-token")
+def firebase_token(current_parent=Depends(get_current_parent)):
+    """Bridge the verified SQL account to Firebase; never accept a client UID."""
+    from app.services.tracking_auth import create_tracking_token
+    return {"token": create_tracking_token(current_parent.id)}

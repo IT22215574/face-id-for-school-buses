@@ -28,3 +28,8 @@ flutter_app/android/.gradle/
 
 # Local development database
 backend/schoolbus.db
+
+# Local mobile configuration
+flutter_app/ios/Flutter/LocalKeys.xcconfig
+flutter_app/config/tracking.*.json
+!flutter_app/config/tracking.example.json

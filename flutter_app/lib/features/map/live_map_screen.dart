@@ -8,6 +8,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:latlong2/latlong.dart' as geo;
 import 'testing_map.dart';
+import '../tracking/shared_devices_screen.dart';
 import '../../providers/auth_provider.dart';
 import '../transport/transport_state.dart';
 
@@ -306,9 +307,14 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(
-            title:
-                Text(_plate.isEmpty ? 'Live Bus Map' : 'Live Map · $_plate')),
+        appBar: AppBar(actions: [
+          IconButton(
+              tooltip: 'Shared devices',
+              icon: const Icon(Icons.share_location),
+              onPressed: () => Navigator.of(context).push(
+                  MaterialPageRoute<void>(
+                      builder: (_) => const SharedDevicesScreen())))
+        ], title: Text(_plate.isEmpty ? 'Live Bus Map' : 'Live Map · $_plate')),
         body: Column(children: [
           Expanded(
               child: _checkingMaps

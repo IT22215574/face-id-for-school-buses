@@ -1,0 +1,39 @@
+{
+  "rules": {
+    ".read": false,
+    ".write": false,
+    "shares": {
+      "$owner": {
+        ".read": "auth != null && auth.uid == $owner",
+        "$viewer": {
+          ".write": "auth != null && auth.uid == $owner && $owner != $viewer",
+          ".validate": "newData.val() == true"
+        }
+      }
+    },
+    "following": {
+      "$viewer": {
+        ".read": "auth != null && auth.uid == $viewer",
+        "$owner": {
+          ".write": "auth != null && auth.uid == $owner && $owner != $viewer",
+          ".validate": "newData.val() == true"
+        }
+      }
+    },
+    "locations": {
+      "$owner": {
+        ".read": "auth != null && (auth.uid == $owner || root.child('shares').child($owner).child(auth.uid).val() == true)",
+        ".write": "auth != null && auth.uid == $owner",
+        ".validate": "newData.hasChildren(['lat', 'lng', 'accuracy', 'timestamp', 'updatedAt'])",
+        "lat": {".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"},
+        "lng": {".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"},
+        "accuracy": {".validate": "newData.isNumber() && newData.val() >= 0"},
+        "speed": {".validate": "newData.isNumber() && newData.val() >= 0"},
+        "heading": {".validate": "newData.isNumber() && newData.val() >= 0 && newData.val() < 360"},
+        "timestamp": {".validate": "newData.isNumber() && newData.val() <= now + 60000 && newData.val() >= now - 120000"},
+        "updatedAt": {".validate": "newData.isNumber() && newData.val() == now"},
+        "$other": {".validate": false}
+      }
+    }
+  }
+}
