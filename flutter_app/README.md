@@ -26,3 +26,5 @@ flutter test test/ui_preview_test.dart --dart-define=CAPTURE_UI=true
 ```
 
 Previews are written to `build/ui-preview/`. Widget tests cover parent selection/switching and profiles, driver navigation and student search, form validation and shared session state, and home layouts at 320, 402, and 600 pixels.
+
+Today’s Journey displays recorded boarding/drop-off events for the selected student rather than sample times. Configure ZKTeco Cloud attendance using [the setup guide](../docs/zkteco-cloud.md).

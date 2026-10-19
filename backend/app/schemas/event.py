@@ -8,8 +8,8 @@ class EventCreate(BaseModel):
     bus_id: int
     event_type: str
     event_time: datetime
-    lat: float
-    lng: float
+    lat: float | None = None
+    lng: float | None = None
     confidence: float | None = None
     source: str = "DEVICE"
 
@@ -22,8 +22,8 @@ class EventOut(BaseModel):
     bus_id: int
     event_type: str
     event_time: datetime
-    lat: float
-    lng: float
+    lat: float | None = None
+    lng: float | None = None
     confidence: float | None = None
     source: str
 

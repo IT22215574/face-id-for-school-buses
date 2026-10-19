@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
@@ -43,7 +43,13 @@ def list_student_events(
 
     query = db.query(Event).filter(Event.student_id == student_id)
     if from_:
-        query = query.filter(Event.event_time >= from_)
+        query = query.filter(Event.event_time >= (from_.astimezone(timezone.utc).replace(tzinfo=None) if from_.tzinfo else from_))
     if to:
-        query = query.filter(Event.event_time <= to)
-    return query.order_by(Event.event_time.desc()).all()
+        query = query.filter(Event.event_time <= (to.astimezone(timezone.utc).replace(tzinfo=None) if to.tzinfo else to))
+    events = query.order_by(Event.event_time.desc(), Event.id.desc()).all()
+    return [{"id": event.id, "student_id": event.student_id, "bus_id": event.bus_id,
+             "event_type": event.event_type.value,
+             "event_time": (event.event_time.replace(tzinfo=timezone.utc)
+                            if event.event_time.tzinfo is None else event.event_time).isoformat(),
+             "lat": event.lat, "lng": event.lng, "confidence": event.confidence,
+             "source": event.source} for event in events]

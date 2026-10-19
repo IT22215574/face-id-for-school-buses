@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
+import 'student_journey.dart';
 import '../auth/sign_out.dart';
 import '../map/map_screen.dart';
 import '../notifications/notifications_screen.dart';
@@ -83,31 +84,7 @@ class DashboardScreen extends ConsumerWidget {
                                       height: 1.2,
                                       fontWeight: FontWeight.bold)),
                               const SizedBox(height: 16),
-                              LayoutBuilder(builder: (context, constraints) {
-                                if (constraints.maxWidth < 320 ||
-                                    MediaQuery.textScalerOf(context).scale(1) >
-                                        1.3) {
-                                  return const Column(children: [
-                                    SizedBox(
-                                        width: double.infinity,
-                                        child: JourneyCard(morning: true)),
-                                    SizedBox(height: 16),
-                                    SizedBox(
-                                        width: double.infinity,
-                                        child: JourneyCard(morning: false)),
-                                  ]);
-                                }
-                                return const Row(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Expanded(
-                                          child: JourneyCard(morning: true)),
-                                      SizedBox(width: 16),
-                                      Expanded(
-                                          child: JourneyCard(morning: false)),
-                                    ]);
-                              }),
+                              StudentJourney(studentId: student.id),
                               const SizedBox(height: 18),
                               Row(children: [
                                 const Expanded(
@@ -177,40 +154,6 @@ class DashboardScreen extends ConsumerWidget {
           BusBottomBar(onHome: () {}, onSwitch: () => signOut(context, ref)),
     );
   }
-}
-
-class JourneyCard extends StatelessWidget {
-  const JourneyCard({super.key, required this.morning});
-  final bool morning;
-  @override
-  Widget build(BuildContext context) => BusCard(
-      radius: 16,
-      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-        Row(children: [
-          Container(
-              width: 8,
-              height: 8,
-              decoration:
-                  const BoxDecoration(color: busBlue, shape: BoxShape.circle)),
-          const SizedBox(width: 8),
-          Expanded(
-              child: Text(morning ? 'Morning Journey' : 'Evening Journey',
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.bold)))
-        ]),
-        const SizedBox(height: 12),
-        const Text('Sample pickup',
-            style: TextStyle(color: busMuted, fontSize: 14)),
-        const SizedBox(height: 4),
-        Text(morning ? '07:30 AM' : '03:00 PM',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-        const SizedBox(height: 12),
-        const Text('Sample dropoff',
-            style: TextStyle(color: busMuted, fontSize: 14)),
-        const SizedBox(height: 4),
-        Text(morning ? '08:15 AM' : '03:45 PM',
-            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-      ]));
 }
 
 void showTransportProfile(BuildContext context,

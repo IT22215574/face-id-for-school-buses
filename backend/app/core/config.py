@@ -22,6 +22,8 @@ class Settings(BaseSettings):
     NO_GPS_THRESHOLD_SECONDS: int = 120
     ENCRYPTION_KEY: str = "9P8wGvM9W8L8V1CXU5B1rpD7hN4Vs0w2xKm8aJZfVwY="
     CURRENCY: str = "LKR"
+    # Serial -> bus_id, timezone, enrolled PIN -> student_id. Empty disables ADMS.
+    ZKTECO_DEVICES_JSON: str = "{}"
 
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True)
 

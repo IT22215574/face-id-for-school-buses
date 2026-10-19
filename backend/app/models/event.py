@@ -25,10 +25,11 @@ class Event(Base):
     bus_id: Mapped[int] = mapped_column(ForeignKey("buses.id"), nullable=False, index=True)
     event_type: Mapped[EventType] = mapped_column(SAEnum(EventType), nullable=False)
     event_time: Mapped[datetime] = mapped_column(nullable=False)
-    lat: Mapped[float] = mapped_column(Float, nullable=False)
-    lng: Mapped[float] = mapped_column(Float, nullable=False)
+    lat: Mapped[float | None] = mapped_column(Float, nullable=True)
+    lng: Mapped[float | None] = mapped_column(Float, nullable=True)
     confidence: Mapped[float | None] = mapped_column(Float, nullable=True)
     source: Mapped[str] = mapped_column(String(50), default="DEVICE", nullable=False)
+    ingestion_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), nullable=False)
 
     student: Mapped["Student"] = relationship(back_populates="events")

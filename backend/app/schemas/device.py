@@ -1,6 +1,7 @@
 from datetime import datetime
+from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, FiniteFloat
 
 
 class DeviceCreate(BaseModel):
@@ -12,11 +13,11 @@ class DeviceCreate(BaseModel):
 class DeviceEventIn(BaseModel):
     student_id: int
     bus_id: int
-    event_type: str
-    event_time: datetime
-    lat: float
-    lng: float
-    confidence: float | None = None
+    event_type: Literal["BOARDED", "ALIGHTED"]
+    event_time: AwareDatetime
+    lat: FiniteFloat = Field(ge=-90, le=90)
+    lng: FiniteFloat = Field(ge=-180, le=180)
+    confidence: FiniteFloat | None = Field(default=None, ge=0, le=1)
 
 
 class DeviceLocationIn(BaseModel):

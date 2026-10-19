@@ -205,8 +205,10 @@ class StudentProfileScreen extends StatelessWidget {
                     student.motherPhone.isEmpty
                         ? 'Not provided'
                         : student.motherPhone),
-                DetailField('ADDRESS', student.pickup),
+                DetailField('ADDRESS',
+                    student.pickup.isEmpty ? 'Not provided' : student.pickup),
                 DetailField('SCHOOL', student.school),
-                DetailField('ADDITIONAL CARE NOTES', student.notes),
+                DetailField('ADDITIONAL CARE NOTES',
+                    student.notes.isEmpty ? 'Not provided' : student.notes),
               ]))));
 }

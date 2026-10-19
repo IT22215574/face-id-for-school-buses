@@ -12,7 +12,7 @@ class TransportStudent {
       this.phone = '',
       this.fatherPhone = '',
       this.motherPhone = '',
-      this.pickup = 'Kurunegala',
+      this.pickup = '',
       this.notes = '',
       this.present = false,
       this.driverName = '',
