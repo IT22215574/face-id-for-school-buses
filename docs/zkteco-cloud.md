@@ -1,94 +1,95 @@
-# ZKTeco Cloud / ADMS attendance testing
+# Per-bus ZKTeco Cloud / ADMS setup
 
-The dashboard reads `/students/{id}/events` for the selected student's current
-local day, displays each boarding/drop-off scan, and refreshes every 10 seconds.
-Names, grade, parent and bus assignments come from `/me/transport`. Existing
-seeded database records remain until you replace them with enrolled students;
-the app does not invent student records or journey times.
+Each bus supports two independently registered machines:
 
-## Prepare the database
+| Driver setup slot | Every scan records |
+| --- | --- |
+| Boarding machine (ENTRY) | BOARDED — got on the bus |
+| Exit machine (EXIT) | ALIGHTED — dropped off |
 
-From `backend/`, install requirements and run `.venv/bin/alembic upgrade head`.
-The new migration allows attendance without GPS; the terminal does not provide
-GPS, so no coordinates are invented. Back up an existing database before upgrading.
-For an unversioned legacy database created using `create_all`, use
-`.venv/bin/python -m scripts.upgrade_attendance_schema` instead. This upgrades
-only the attendance columns and creates a temporary SQLite backup, printing its
-path. Keep that backup somewhere persistent if required. It is safe to rerun.
+Each driver manages only their active assigned bus. A machine serial can belong
+to only one bus/slot. The two machines can use different enrolled user IDs for
+the same student. Machine roles determine direction; no manual IN/OUT selection
+is required for these registered machines.
 
-Create the actual student through the driver's **Add student** screen using the
-registered parent's email, or use the existing admin endpoints to link the parent
-and assign a bus. This is required for parents to see that student's scans.
+## Driver workflow
 
-Create an active Device record for that bus using the existing provisioning/seed
-workflow. `GET /device/students` with its `x-api-key` returns student IDs for that
-bus. Enroll each student on the ZKTeco terminal and record its PIN/user ID.
-The terminal PIN need not equal the database student ID.
+1. Sign in as the driver and open **Face ID machines** on the dashboard.
+2. Register the boarding machine using its actual serial number, model and local
+   timezone (Asia/Colombo by default).
+3. Match each student's name to their enrolled user ID/PIN on that machine.
+   Only students assigned to this bus are accepted. Leave unenrolled IDs blank.
+4. Register the exit machine separately and map its enrolled IDs.
+5. On both terminals, set **COMM → Cloud Server / ADMS** to the backend's network
+   address and port, **8000** for local testing. Do not use localhost on a device.
+6. Refresh connection status. Scan a test student at each machine and check the
+   linked parent's Today's Journey. It refreshes recorded events every 10 seconds.
 
-## Configure the receiver
+Faces must be enrolled on each terminal using the machine/vendor tools. This
+app maps existing user IDs; it does not upload or store face templates/photos.
+Names and grade come from the database. Existing seeded/demo students are not
+automatically converted into real enrolled students. Add real students through
+**Add student**, link their registered parent email, and assign them to the bus.
 
-Set this environment variable (or put it in `backend/.env`), replacing every
-example value with the actual serial, database bus/student IDs, and enrolled PINs:
+Drivers can edit mappings, remove a machine, or register a replacement. Remove
+the old machine first; recorded attendance remains. Do not reassign an enrolled
+PIN to another person while the machine retains old logs: replayed historical
+records use the current mapping. Archive/clear old terminal logs using vendor
+tools before deliberately repurposing a terminal or PIN.
 
-```dotenv
-ZKTECO_DEVICES_JSON='{"YOUR_SERIAL":{"bus_id":1,"timezone":"Asia/Colombo","students":{"1001":42,"1002":43},"status_map":{"0":"BOARDED","1":"ALIGHTED"}}}'
-```
+## Backend setup
 
-Empty configuration disables terminal access. Start the backend on the network
-interface reachable by the machine:
+Run from `backend/`:
 
 ```sh
+.venv/bin/python -m pip install -r requirements.txt
 .venv/bin/python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-On the machine, open **COMM → Cloud Server / ADMS**. Set Server Address to the
-backend computer's LAN IP (not localhost), and Server Port to **8000**. The
-receiver uses HTTP on a private network. A remote bus needs private VPN routing
-or an authenticated gateway. This legacy protocol identifies terminals by serial
-number only; do not expose `/iclock/*` directly to the public internet.
+Startup creates the new `face_terminals` registration table for databases using
+`create_all`. Versioned databases should run `.venv/bin/alembic upgrade head`.
+Existing unversioned databases must first run
+`.venv/bin/python -m scripts.upgrade_attendance_schema` if they have not yet
+received the attendance upgrade. That script backs up SQLite and allows scans
+without GPS; terminal scans do not invent coordinates. The development database
+was already upgraded during implementation.
 
-Configure the terminal for Attendance PUSH and explicitly select IN when boarding
-and OUT when leaving the bus. Defaults map status `0` to BOARDED and `1` to
-ALIGHTED; verify these codes on the actual model. Other statuses are rejected
-unless explicitly mapped. Never alternate IN/OUT automatically: missed/repeated
-scans would produce false drop-off times. Set the machine's clock to the timezone
-in the configuration. Morning and afternoon scans appear in time order without
-assuming a timetable or classifying an unknown journey.
+All buses/machines share the same server port. Serial number routing identifies
+the correct bus and ENTRY/EXIT role; separate TCP ports per bus are unnecessary.
+A remote bus needs a reachable private network/VPN or authenticated gateway.
+Legacy ADMS serial numbers are identifiers, not cryptographic authentication:
+keep `/iclock/*` on a trusted device network rather than exposing it publicly.
+The driver setup APIs require the normal authenticated driver account.
 
-Supported paths: GET `/iclock/cdata` (options), GET `/iclock/getrequest`
-(heartbeat), POST `/iclock/cdata?SN=...&table=ATTLOG` (attendance); `.aspx` aliases
-are also accepted. ATTLOG is tab-separated PIN, local timestamp, status,
-verification method, plus optional trailing fields. Only attendance records are
-requested; face templates/photos are neither downloaded nor enrolled by this app.
-The PIN mapping is authoritative; verification codes are model-dependent and are
-not used to claim a particular biometric method. Access-control RTLOG, newer
-registry/security handshakes and remote enrollment are not implemented. Exact
-model/firmware and a real upload are still needed to confirm compatibility.
+Supported legacy attendance paths:
 
-Unknown serials, unmapped PINs, unassigned students, invalid times and unsupported
-statuses reject the whole batch. Repeated uploads are deduplicated by terminal,
-bus, student, event type and timestamp. Historical uploads remain historical;
-only today's events appear in Today's Journey. Cloud ingestion updates attendance
-records; it does not currently dispatch push/SMS notifications.
+- GET `/iclock/cdata?SN=SERIAL`: options.
+- GET `/iclock/getrequest?SN=SERIAL`: heartbeat.
+- POST `/iclock/cdata?SN=SERIAL&table=ATTLOG`: tab-separated PIN, local timestamp,
+  status, verification method, optional trailing fields.
+- `.aspx` aliases are supported.
 
-## Verify without the machine
+Student assignment is checked again at ingestion. Unknown serials, unmapped IDs,
+invalid timestamps and students belonging to another bus reject the batch.
+Repeated uploads are deduplicated by terminal, bus, student, direction and time.
+Cloud ingestion currently updates attendance without dispatching push/SMS alerts.
+The terminal's local clock must match its configured timezone. The exact model
+and real uploads still need testing: Access Control RTLOG, newer registry/security
+handshakes and remote enrollment are not implemented.
 
-With a real configured serial/PIN (the values below are examples), send a scan:
+## APIs
 
-```sh
-curl -X POST 'http://localhost:8000/iclock/cdata?SN=YOUR_SERIAL&table=ATTLOG' \
-  --data-binary $'1001\t2026-10-19 07:30:00\t0\t15\n1001\t2026-10-19 08:15:00\t1\t15'
-```
+- GET `/driver/machines`: assigned bus, its students and two configured slots.
+- PUT `/driver/machines/ENTRY` or `/EXIT`: serial, model, timezone and `students`
+  (a dictionary mapping enrolled PIN strings to student database IDs).
+- DELETE `/driver/machines/ENTRY` or `/EXIT`: unregister a slot, retain events.
+- GET `/students/{id}/events`: parent-authorized event history.
 
-Expect `OK: 2`. These are synthetic test records; use a test student and today's
-local date if you want them visible today. Repeat the request to check that no
-extra events appear. Then sign in as the linked parent and select the student.
-Verify a real IN scan and OUT scan on the terminal before relying on this setup.
-
-For custom HTTP hardware, the existing POST `/device/events` accepts authenticated
-JSON with `student_id`, `bus_id`, `event_type` (BOARDED/ALIGHTED), an ISO timestamp
-with timezone, latitude/longitude and optional confidence. Its API key must belong
-to the student's assigned bus. ZKTeco Cloud uses the ADMS endpoints instead.
+The legacy `ZKTECO_DEVICES_JSON` environment configuration remains supported for
+existing setups and uses its IN/OUT `status_map`. These serials must be removed
+from that configuration by an administrator before registering them through the
+driver screen. New driver registrations require no environment JSON or shared
+bus-level API key. The existing `/device/*` JSON API remains for custom hardware.
 
 ZKTeco setup reference:
 https://www.zkteco.co.za/documentation/biotime8/Biotime%208%20%E2%80%93%20Communication%20Settings%20%E2%80%93%20Cloud%20or%20ADMS%20settings.pdf

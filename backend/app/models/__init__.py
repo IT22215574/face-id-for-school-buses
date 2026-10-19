@@ -11,6 +11,7 @@ from app.models.emergency import EmergencyAlert, EmergencyAlertUpdate, Emergency
 from app.models.payroll import AuditLog, Driver, DriverAdvance, DriverAdjustment, DriverAttendance, DriverPayProfile, Payslip, PayPeriod, PayrollRecord, Trip
 
 __all__ = [
+    "FaceTerminal",
     "Parent",
     "Student",
     "ParentStudent",
@@ -37,3 +38,5 @@ __all__ = [
 ]
 
 from app.models.student_transport import StudentTransport
+
+from app.models.face_terminal import FaceTerminal

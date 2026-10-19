@@ -82,3 +82,47 @@ def test_device_cannot_report_another_bus(setup):
     for overrides in [{'event_type': 'unknown'}, {'event_time': datetime.now()}, {'lat': 91}]:
         with pytest.raises(ValidationError):
             DeviceEventIn(**(payload.model_dump() | overrides))
+
+
+def test_two_machines_per_bus_fixed_directions_and_driver_isolation(setup):
+    from app.api.deps import require_parent
+    from app.api.routes.face_terminals import router as machines_router
+    from app.models.payroll import Driver
+    from app.models.face_terminal import FaceTerminal
+    client, db, student, parent, device = setup
+    parent.role = 'DRIVER'
+    db.add(Driver(user_id=parent.id, name='Driver', phone='1', license_no='L1', nic='N1', bus_id=device.bus_id, status='ACTIVE'))
+    other_bus = Bus(plate_no='SECOND', device_id='second-bus', route_name='Second')
+    other_driver = Parent(name='Other driver', email='driver2@test.com', phone='2', role='DRIVER', password_hash='x')
+    db.add_all([other_bus, other_driver])
+    db.flush()
+    db.add(Driver(user_id=other_driver.id, name='Other driver', phone='2', license_no='L2', nic='N2', bus_id=other_bus.id, status='ACTIVE'))
+    db.commit()
+    client.app.include_router(machines_router)
+    user = [parent]
+    client.app.dependency_overrides[require_parent] = lambda: user[0]
+    def payload(serial, pin='1001', mapped=True):
+        return {'serial': serial, 'model': 'ZKTeco test', 'timezone': 'Asia/Colombo',
+                'students': {pin: student.id} if mapped else {}}
+    assert client.put('/driver/machines/ENTRY', json=payload('BUS1-IN')).status_code == 200
+    assert client.put('/driver/machines/EXIT', json=payload('BUS1-OUT', '2001')).status_code == 200
+    assert len(client.get('/driver/machines').json()['machines']) == 2
+    for serial, pin in [('BUS1-IN', '1001'), ('BUS1-OUT', '2001')]:
+        result = client.post(f'/iclock/cdata?SN={serial}&table=ATTLOG', content=f'{pin}\t2026-10-19 07:30:00\t0\t15')
+        assert result.status_code == 200, result.text
+    assert {e.event_type.value for e in db.query(Event).all()} == {'BOARDED', 'ALIGHTED'}
+    assert client.get('/driver/machines').json()['machines'][0]['last_seen_at'] is not None
+    user[0] = other_driver
+    assert client.get('/driver/machines').json()['machines'] == []
+    assert client.put('/driver/machines/ENTRY', json=payload('BUS1-IN', mapped=False)).status_code == 409
+    assert client.put('/driver/machines/ENTRY', json=payload('BUS2-IN')).status_code == 403
+    assert client.put('/driver/machines/ENTRY', json=payload('BUS2-IN', mapped=False)).status_code == 200
+    assert client.delete('/driver/machines/EXIT').status_code == 200
+    assert db.query(FaceTerminal).filter_by(serial='BUS1-OUT').first() is not None
+    user[0] = parent
+    assert client.delete('/driver/machines/ENTRY').status_code == 200
+    assert client.post('/iclock/cdata?SN=BUS1-IN&table=ATTLOG', content='').status_code == 403
+    assert db.query(Event).count() == 2
+    parent.role = 'PARENT'
+    db.commit()
+    assert client.get('/driver/machines').status_code == 403

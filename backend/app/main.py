@@ -10,6 +10,7 @@ from app.api.routes.auth import router as auth_router
 from app.api.routes.buses import router as buses_router
 from app.api.routes.devices import router as devices_router
 from app.api.routes.zkteco import router as zkteco_router
+from app.api.routes.face_terminals import router as face_terminals_router
 from app.api.routes.emergency import router as emergency_router
 from app.api.routes.parents import router as parents_router
 from app.api.routes.payroll import router as payroll_router
@@ -40,6 +41,7 @@ app.include_router(students_router)
 app.include_router(buses_router)
 app.include_router(devices_router)
 app.include_router(zkteco_router)
+app.include_router(face_terminals_router)
 app.include_router(emergency_router)
 app.include_router(payroll_router)
 app.include_router(admin_router)

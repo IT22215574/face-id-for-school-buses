@@ -16,6 +16,7 @@ from app.api.deps import get_db
 from app.core.config import get_settings
 from app.models.bus import Bus
 from app.models.device import Device
+from app.models.face_terminal import FaceTerminal
 from app.models.event import Event, EventType
 from app.models.student import Student
 from app.models.student_transport import StudentTransport
@@ -25,6 +26,11 @@ router = APIRouter(prefix="/iclock", tags=["ZKTeco ADMS"])
 
 def terminal(request: Request, db: Session):
     serial = request.query_params.get("SN", "")
+    machine = db.query(FaceTerminal).filter_by(serial=serial).first()
+    if machine:
+        return serial, {"bus_id": machine.bus_id, "timezone": machine.timezone,
+                        "students": machine.students,
+                        "fixed_event_type": "BOARDED" if machine.role == "ENTRY" else "ALIGHTED"}, machine
     config = json.loads(get_settings().ZKTECO_DEVICES_JSON).get(serial)
     if not config:
         raise HTTPException(403, "Terminal serial is not configured")
@@ -81,7 +87,7 @@ async def attendance(request: Request, db: Session = Depends(get_db)):
             if not assignment or assignment.bus_id != device.bus_id or db.get(Student, int(student_id)) is None:
                 raise ValueError(f"User {pin} is not assigned to this bus")
             mapping = config.get("status_map", {"0": "BOARDED", "1": "ALIGHTED"})
-            event_type = EventType(mapping[fields[2]])
+            event_type = EventType(config["fixed_event_type"] if "fixed_event_type" in config else mapping[fields[2]])
             when = datetime.strptime(fields[1], "%Y-%m-%d %H:%M:%S").replace(
                 tzinfo=ZoneInfo(config.get("timezone", "Asia/Colombo"))).astimezone(timezone.utc)
             parsed.append((int(student_id), event_type, when))

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/bus_ui.dart';
 import '../auth/sign_out.dart';
 import 'add_student_screen.dart';
+import 'machines_screen.dart';
 import '../map/live_map_screen.dart';
 import '../transport/student_screens.dart';
 import '../transport/transport_state.dart';
@@ -72,6 +73,17 @@ class DriverScreen extends ConsumerWidget {
                               trailing: const Icon(Icons.chevron_right),
                               onTap: () =>
                                   openScreen(context, const LiveMapScreen()),
+                            )),
+                            const SizedBox(height: 16),
+                            BusCard(
+                                child: ListTile(
+                              leading: const Icon(Icons.face, color: busBlue),
+                              title: const Text('Face ID machines'),
+                              subtitle: const Text(
+                                  'Set up boarding and exit machines'),
+                              trailing: const Icon(Icons.chevron_right),
+                              onTap: () =>
+                                  openScreen(context, const MachinesScreen()),
                             )),
                             const SizedBox(height: 24),
                             SizedBox(
