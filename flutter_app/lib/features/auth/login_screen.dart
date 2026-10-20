@@ -5,6 +5,7 @@ import '../../core/bus_ui.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/auth_service.dart';
 import '../driver/driver_screen.dart';
+import '../admin/admin_screen.dart';
 import '../transport/student_screens.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -40,15 +41,17 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       if (!mounted) return;
       final role = ref.read(authStateProvider);
       if (role == null) {
-        setState(() => error = 'Please use a parent or driver account.');
+        setState(() => error = 'Please use a parent, driver or admin account.');
         return;
       }
       Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute<void>(
               settings: const RouteSettings(name: 'transport-home'),
-              builder: (_) => role == AccountRole.driver
-                  ? const DriverScreen()
-                  : const SelectChildScreen()),
+              builder: (_) => role == AccountRole.admin
+                  ? const AdminScreen()
+                  : role == AccountRole.driver
+                      ? const DriverScreen()
+                      : const SelectChildScreen()),
           (_) => false);
     } on DioException catch (e) {
       if (!mounted) return;
@@ -104,7 +107,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             fontWeight: FontWeight.bold)),
                                     const SizedBox(height: 12),
                                     const Text(
-                                        'Sign in with your parent or driver account.',
+                                        'Sign in with your parent, driver or admin account.',
                                         textAlign: TextAlign.center),
                                     const SizedBox(height: 32),
                                     TextFormField(

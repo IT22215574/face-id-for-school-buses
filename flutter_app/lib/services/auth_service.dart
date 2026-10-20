@@ -2,7 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../core/api_client.dart';
 
-enum AccountRole { parent, driver }
+enum AccountRole { parent, driver, admin }
 
 class AuthService {
   AuthService(this._storage, this._apiClient);
@@ -22,6 +22,7 @@ class AuthService {
       final role = switch (profile.data['role']) {
         'PARENT' => AccountRole.parent,
         'DRIVER' => AccountRole.driver,
+        'ADMIN' => AccountRole.admin,
         _ => null,
       };
       if (role == null) await logout();

@@ -34,6 +34,8 @@ class ParentOut(BaseModel):
 
 
 class BusCreate(BaseModel):
+    model_config = ConfigDict(str_strip_whitespace=True, extra="forbid")
+
     plate_no: str = Field(..., min_length=2, max_length=32)
     device_id: str = Field(..., min_length=2, max_length=64)
     route_name: str = Field(..., min_length=2, max_length=120)
