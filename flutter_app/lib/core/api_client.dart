@@ -35,7 +35,14 @@ class ApiClient {
       baseUrl: AppConstants.baseUrl,
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
-      headers: {'Content-Type': 'application/json'},
+      headers: {
+        'Content-Type': 'application/json',
+        if (Uri.parse(AppConstants.baseUrl).host.endsWith('.ngrok-free.dev') ||
+            Uri.parse(AppConstants.baseUrl).host.endsWith('.ngrok-free.app') ||
+            Uri.parse(AppConstants.baseUrl).host.endsWith('.ngrok.app') ||
+            Uri.parse(AppConstants.baseUrl).host.endsWith('.ngrok.io'))
+          'ngrok-skip-browser-warning': 'true',
+      },
     ),
   )..interceptors.add(
       InterceptorsWrapper(

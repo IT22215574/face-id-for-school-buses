@@ -23,7 +23,8 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     with WidgetsBindingObserver {
   GoogleMapController? _map;
   StreamSubscription<Position>? _positions;
-  Timer? _poll;
+  Timer? _poll, _detailsPoll;
+  bool _readingDetails = false;
   LatLng? _point;
   int? _busId;
   String _plate = '';
@@ -73,6 +74,7 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
   Future<void> _loadBus() async {
     try {
       _poll?.cancel();
+      _detailsPoll?.cancel();
       final api = ref.read(apiClientProvider).dio;
       dynamic bus;
       if (widget.driver) {
@@ -105,22 +107,12 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
             ? 'Ready to share your phone location'
             : 'Loading $_child’s bus location…';
       });
-      final route = (await api.get('/buses/$_busId/route')).data;
-      if (!mounted) return;
-      setState(() {
-        _stops = (route['stops'] as List)
-            .map((e) => Map<String, dynamic>.from(e as Map))
-            .toList();
-        _route = _stops
-            .map((e) => LatLng(
-                (e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
-            .toList();
-      });
-      await _readLocation();
-      if (mounted) {
-        _poll =
-            Timer.periodic(const Duration(seconds: 5), (_) => _readLocation());
-      }
+      // Begin GPS polling before optional route/boarding details are loaded.
+      _poll =
+          Timer.periodic(const Duration(seconds: 5), (_) => _readLocation());
+      _detailsPoll =
+          Timer.periodic(const Duration(seconds: 30), (_) => _refreshDetails());
+      await Future.wait([_readLocation(), _readRoute(), _refreshDetails()]);
     } on DioException catch (e) {
       if (mounted) setState(() => _status = _error(e));
     }
@@ -137,7 +129,72 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     if (_busId == null || _sharing || _reading) return;
     _reading = true;
     try {
-      if (_studentId != null) {
+      final response = await ref
+          .read(apiClientProvider)
+          .dio
+          .get('/buses/$_busId/live-location');
+      if (!mounted || _sharing) return;
+      final data = response.data;
+      _showPoint(LatLng(
+          (data['lat'] as num).toDouble(), (data['lng'] as num).toDouble()));
+      final time = DateTime.parse(data['server_time'] as String);
+      // SQLite returns UTC timestamps without a zone suffix.
+      final updated = time.isUtc
+          ? time
+          : DateTime.utc(time.year, time.month, time.day, time.hour,
+              time.minute, time.second, time.millisecond, time.microsecond);
+      final stale = DateTime.now().toUtc().difference(updated) >
+          const Duration(minutes: 2);
+      setState(() => _status =
+          '${stale ? "Bus location is stale" : "Bus location updated"} · ${updated.toLocal()}');
+    } on DioException catch (e) {
+      if (mounted && !_sharing) {
+        setState(() => _status = e.response?.statusCode == 404
+            ? (widget.driver
+                ? 'No bus location yet. Start sharing to send your position.'
+                : 'Waiting for the driver to share a location.')
+            : _error(e));
+      }
+    } finally {
+      _reading = false;
+    }
+  }
+
+  Future<void> _readRoute() async {
+    final busId = _busId;
+    if (busId == null) return;
+    try {
+      final route =
+          (await ref.read(apiClientProvider).dio.get('/buses/$busId/route'))
+              .data;
+      if (!mounted || busId != _busId) return;
+      setState(() {
+        _stops = (route['stops'] as List)
+            .map((e) => Map<String, dynamic>.from(e as Map))
+            .toList();
+        _route = _stops
+            .map((e) => LatLng(
+                (e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
+            .toList();
+      });
+    } on DioException {
+      // The bus marker remains available when route details fail.
+    }
+  }
+
+  Future<void> _refreshDetails() async {
+    if (_readingDetails) return;
+    _readingDetails = true;
+    try {
+      await _readDetails();
+    } finally {
+      _readingDetails = false;
+    }
+  }
+
+  Future<void> _readDetails() async {
+    if (_studentId != null) {
+      try {
         final status = (await ref
                 .read(apiClientProvider)
                 .dio
@@ -147,7 +204,14 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
         setState(() => _childStatus = status['status'] == 'ON_BUS'
             ? 'Last boarding event: on bus'
             : 'No current boarding confirmation');
+      } on DioException {
+        if (mounted) {
+          setState(() => _childStatus = 'Boarding status unavailable');
+        }
       }
+    }
+    if (_busId == null) return;
+    try {
       final history = (await ref
               .read(apiClientProvider)
               .dio
@@ -163,29 +227,8 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
           .map((e) => LatLng(
               (e['lat'] as num).toDouble(), (e['lng'] as num).toDouble()))
           .toList());
-      final response = await ref
-          .read(apiClientProvider)
-          .dio
-          .get('/buses/$_busId/live-location');
-      if (!mounted || _sharing) return;
-      final data = response.data;
-      _showPoint(LatLng(
-          (data['lat'] as num).toDouble(), (data['lng'] as num).toDouble()));
-      final updated = DateTime.parse(data['server_time'] as String).toUtc();
-      final stale = DateTime.now().toUtc().difference(updated) >
-          const Duration(minutes: 2);
-      setState(() => _status =
-          '${stale ? "Bus location is stale" : "Bus location updated"} · ${updated.toLocal()}');
-    } on DioException catch (e) {
-      if (mounted && !_sharing) {
-        setState(() => _status = e.response?.statusCode == 404
-            ? (widget.driver
-                ? 'No bus location yet. Start sharing to send your position.'
-                : 'Waiting for the driver to share a location.')
-            : _error(e));
-      }
-    } finally {
-      _reading = false;
+    } on DioException {
+      // History is optional; a missing trail must not hide the live position.
     }
   }
 
@@ -430,6 +473,7 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     WidgetsBinding.instance.removeObserver(this);
     _positions?.cancel();
     _poll?.cancel();
+    _detailsPoll?.cancel();
     _map?.dispose();
     super.dispose();
   }

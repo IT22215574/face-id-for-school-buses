@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from app.api.deps import get_db, require_parent
 from app.models.event import Event
 from app.models.student import Student
+from app.models.parent_student import ParentStudent
 
 router = APIRouter(tags=["Students"])
 
@@ -15,7 +16,9 @@ def get_student_status(student_id: int, current_parent=Depends(require_parent), 
     student = db.get(Student, student_id)
     if student is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
-    if student not in current_parent.students:
+    if not db.query(ParentStudent).filter_by(
+        parent_id=current_parent.id, student_id=student_id
+    ).first():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Student not linked to parent")
 
     latest_event = db.query(Event).filter(Event.student_id == student_id).order_by(Event.event_time.desc()).first()
@@ -38,7 +41,9 @@ def list_student_events(
     student = db.get(Student, student_id)
     if student is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Student not found")
-    if student not in current_parent.students:
+    if not db.query(ParentStudent).filter_by(
+        parent_id=current_parent.id, student_id=student_id
+    ).first():
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Student not linked to parent")
 
     query = db.query(Event).filter(Event.student_id == student_id)

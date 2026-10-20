@@ -12,63 +12,85 @@ import 'package:school_bus_parent_app/providers/auth_provider.dart';
 import 'package:school_bus_parent_app/features/transport/transport_state.dart';
 
 void main() {
-  testWidgets('Parent tracks the selected child bus and polls for GPS',
-      (tester) async {
-    const channel = MethodChannel('school_bus/maps_configuration');
-    tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, (_) async => false);
-    addTearDown(() => tester.binding.defaultBinaryMessenger
-        .setMockMethodCallHandler(channel, null));
-    FlutterSecureStorage.setMockInitialValues({});
-    final client = ApiClient(const FlutterSecureStorage());
-    var locationReads = 0;
-    client.dio.interceptors
-        .add(InterceptorsWrapper(onRequest: (request, handler) {
-      dynamic data;
-      switch (request.path) {
-        case '/me/transport':
-          data = [
-            {'id': 41, 'name': 'First child', 'bus_id': 6, 'plate_no': 'OTHER'},
-            {'id': 42, 'name': 'Aisha', 'bus_id': 7, 'plate_no': 'BUS-24'}
-          ];
-        case '/buses/7/route':
-          data = {'stops': []};
-        case '/students/42/status':
-          data = {'status': 'ON_BUS'};
-        case '/buses/7/route-history':
-          data = {'points': []};
-        case '/buses/7/live-location':
-          locationReads++;
-          data = {
-            'lat': 7.4863,
-            'lng': 80.3647,
-            'server_time': DateTime.now()
-                .toUtc()
-                .subtract(const Duration(minutes: 3))
-                .toIso8601String()
-          };
-        default:
-          fail('Unexpected tracking request: ${request.path}');
-      }
-      handler.resolve(
-          Response(requestOptions: request, data: data, statusCode: 200));
-    }));
-    await tester.pumpWidget(ProviderScope(overrides: [
-      apiClientProvider.overrideWithValue(client),
-      selectedChildProvider.overrideWith((ref) => 1),
-    ], child: const MaterialApp(home: LiveMapScreen(driver: false))));
-    await tester.pumpAndSettle();
-    expect(find.textContaining('Aisha · Last boarding event: on bus'),
-        findsOneWidget);
-    expect(find.textContaining('Bus location is stale'), findsOneWidget);
-    expect(find.textContaining('7.48630, 80.36470'), findsOneWidget);
-    expect(find.text('Start sharing'), findsNothing);
-    expect(locationReads, 1);
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pumpAndSettle();
-    expect(locationReads, 2);
-    await tester.pumpWidget(const SizedBox());
-  }, variant: TargetPlatformVariant({TargetPlatform.iOS}));
+  for (final detailsFail in [false, true]) {
+    testWidgets('Parent tracks GPS when optional details fail: $detailsFail',
+        (tester) async {
+      const channel = MethodChannel('school_bus/maps_configuration');
+      tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, (_) async => false);
+      addTearDown(() => tester.binding.defaultBinaryMessenger
+          .setMockMethodCallHandler(channel, null));
+      FlutterSecureStorage.setMockInitialValues({});
+      final client = ApiClient(const FlutterSecureStorage());
+      var locationReads = 0;
+      client.dio.interceptors
+          .add(InterceptorsWrapper(onRequest: (request, handler) {
+        if (detailsFail &&
+            (request.path.endsWith('/status') ||
+                request.path.endsWith('/route') ||
+                request.path.endsWith('/route-history'))) {
+          handler.reject(DioException(
+              requestOptions: request,
+              response: Response(requestOptions: request, statusCode: 403),
+              type: DioExceptionType.badResponse));
+          return;
+        }
+        dynamic data;
+        switch (request.path) {
+          case '/me/transport':
+            data = [
+              {
+                'id': 41,
+                'name': 'First child',
+                'bus_id': 6,
+                'plate_no': 'OTHER'
+              },
+              {'id': 42, 'name': 'Aisha', 'bus_id': 7, 'plate_no': 'BUS-24'}
+            ];
+          case '/buses/7/route':
+            data = {'stops': []};
+          case '/students/42/status':
+            data = {'status': 'ON_BUS'};
+          case '/buses/7/route-history':
+            data = {'points': []};
+          case '/buses/7/live-location':
+            locationReads++;
+            data = {
+              'lat': locationReads == 1 ? 7.4863 : 7.4873,
+              'lng': 80.3647,
+              'server_time': DateTime.now()
+                  .toUtc()
+                  .subtract(const Duration(minutes: 3))
+                  .toIso8601String()
+                  .replaceAll('Z', detailsFail ? '' : 'Z')
+            };
+          default:
+            fail('Unexpected tracking request: ${request.path}');
+        }
+        handler.resolve(
+            Response(requestOptions: request, data: data, statusCode: 200));
+      }));
+      await tester.pumpWidget(ProviderScope(overrides: [
+        apiClientProvider.overrideWithValue(client),
+        selectedChildProvider.overrideWith((ref) => 1),
+      ], child: const MaterialApp(home: LiveMapScreen(driver: false))));
+      await tester.pumpAndSettle();
+      expect(
+          find.textContaining(detailsFail
+              ? 'Aisha · Boarding status unavailable'
+              : 'Aisha · Last boarding event: on bus'),
+          findsOneWidget);
+      expect(find.textContaining('Bus location is stale'), findsOneWidget);
+      expect(find.textContaining('7.48630, 80.36470'), findsOneWidget);
+      expect(find.text('Start sharing'), findsNothing);
+      expect(locationReads, 1);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+      expect(locationReads, 2);
+      expect(find.textContaining('7.48730, 80.36470'), findsOneWidget);
+      await tester.pumpWidget(const SizedBox());
+    }, variant: TargetPlatformVariant({TargetPlatform.iOS}));
+  }
 
   for (final missingChannel in [false, true]) {
     testWidgets(
