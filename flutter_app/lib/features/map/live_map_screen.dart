@@ -23,7 +23,11 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     with WidgetsBindingObserver {
   GoogleMapController? _map;
   StreamSubscription<Position>? _positions;
-  Timer? _poll, _detailsPoll;
+  Timer? _poll, _detailsPoll, _statusClock;
+  bool _followBus = true;
+  int _recenterSignal = 0;
+  DateTime? _locationUpdatedAt;
+  bool _locationError = false;
   bool _readingDetails = false;
   LatLng? _point;
   int? _busId;
@@ -45,6 +49,9 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    _statusClock = Timer.periodic(const Duration(seconds: 30), (_) {
+      if (mounted) setState(() {});
+    });
     _checkMapsConfiguration();
     _loadBus();
   }
@@ -143,12 +150,15 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
           ? time
           : DateTime.utc(time.year, time.month, time.day, time.hour,
               time.minute, time.second, time.millisecond, time.microsecond);
+      _locationUpdatedAt = updated;
+      _locationError = false;
       final stale = DateTime.now().toUtc().difference(updated) >
           const Duration(minutes: 2);
       setState(() => _status =
           '${stale ? "Bus location is stale" : "Bus location updated"} · ${updated.toLocal()}');
     } on DioException catch (e) {
       if (mounted && !_sharing) {
+        _locationError = e.response?.statusCode != 404;
         setState(() => _status = e.response?.statusCode == 404
             ? (widget.driver
                 ? 'No bus location yet. Start sharing to send your position.'
@@ -234,7 +244,7 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
 
   void _showPoint(LatLng point) {
     setState(() => _point = point);
-    _map?.animateCamera(CameraUpdate.newLatLng(point));
+    if (_followBus) _map?.animateCamera(CameraUpdate.newLatLng(point));
   }
 
   Future<void> _start() async {
@@ -312,11 +322,14 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
       });
       if (mounted && _sharing && session == _session) {
         _lastUpload = DateTime.now();
+        _locationUpdatedAt = _lastUpload;
+        _locationError = false;
         setState(() =>
             _status = 'Sharing · last sent ${TimeOfDay.now().format(context)}');
       }
     } on DioException catch (e) {
       if (mounted && session == _session) {
+        _locationError = true;
         if (e.response?.statusCode == 401 || e.response?.statusCode == 403) {
           _stop();
         }
@@ -348,124 +361,302 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     }
   }
 
+  void _follow() {
+    if (_point == null) return;
+    setState(() {
+      _followBus = true;
+      ++_recenterSignal;
+    });
+    _map?.animateCamera(CameraUpdate.newLatLng(_point!));
+  }
+
+  String get _ageLabel {
+    final updated = _locationUpdatedAt;
+    if (updated == null) return 'Waiting for the first GPS update';
+    final age = DateTime.now().toUtc().difference(updated.toUtc());
+    if (age.inSeconds < 30) return 'Updated just now';
+    if (age.inMinutes < 1) return 'Updated less than a minute ago';
+    if (age.inHours < 1) return 'Updated ${age.inMinutes} min ago';
+    if (age.inDays < 1) return 'Updated ${age.inHours} hr ago';
+    return 'Updated ${age.inDays} days ago';
+  }
+
+  Widget _mapView() => _checkingMaps
+      ? const Center(child: CircularProgressIndicator())
+      : !_mapsReady
+          ? TestingMap(
+              point: _point == null
+                  ? null
+                  : geo.LatLng(_point!.latitude, _point!.longitude),
+              route: _route
+                  .map((p) => geo.LatLng(p.latitude, p.longitude))
+                  .toList(),
+              history: _history
+                  .map((p) => geo.LatLng(p.latitude, p.longitude))
+                  .toList(),
+              stopNames: _stops.map((s) => s['name'] as String).toList(),
+              plate: _plate,
+              followBus: _followBus,
+              showRecenter: false,
+              recenterSignal: _recenterSignal,
+            )
+          : GoogleMap(
+              mapToolbarEnabled: false,
+              zoomControlsEnabled: false,
+              initialCameraPosition: const CameraPosition(
+                  target: LatLng(7.4863, 80.3647), zoom: 15),
+              onMapCreated: (controller) {
+                _map = controller;
+                if (_point != null) {
+                  controller.moveCamera(CameraUpdate.newLatLng(_point!));
+                }
+              },
+              polylines: {
+                if (_route.isNotEmpty)
+                  Polyline(
+                      polylineId: const PolylineId('sample'),
+                      points: _route,
+                      color: Colors.grey,
+                      patterns: [PatternItem.dash(12), PatternItem.gap(8)]),
+                if (_history.isNotEmpty)
+                  Polyline(
+                      polylineId: const PolylineId('recorded'),
+                      points: _history,
+                      color: Colors.blue,
+                      width: 5),
+              },
+              markers: {
+                for (var i = 0; i < _stops.length; i++)
+                  Marker(
+                      markerId: MarkerId('stop$i'),
+                      position: _route[i],
+                      infoWindow:
+                          InfoWindow(title: _stops[i]['name'] as String),
+                      icon: BitmapDescriptor.defaultMarkerWithHue(
+                          BitmapDescriptor.hueGreen)),
+                if (_point != null)
+                  Marker(
+                      markerId: const MarkerId('bus'),
+                      position: _point!,
+                      infoWindow: InfoWindow(title: _plate))
+              },
+            );
+
   @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(actions: [
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final stale = _locationUpdatedAt != null &&
+        DateTime.now().toUtc().difference(_locationUpdatedAt!.toUtc()) >
+            const Duration(minutes: 2);
+    final live = _point != null &&
+        !stale &&
+        !_locationError &&
+        (!widget.driver || _sharing);
+    final color = live ? const Color(0xFF087F5B) : const Color(0xFF9A6700);
+    final title = _locationError
+        ? 'Connection needs attention'
+        : stale
+            ? 'Bus location is stale'
+            : _sharing
+                ? 'Sharing your location'
+                : live
+                    ? 'Live bus location'
+                    : widget.driver
+                        ? 'Ready for your trip'
+                        : 'Waiting for the bus';
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(_plate.isEmpty ? 'Live Bus Map' : _plate,
+              maxLines: 1, overflow: TextOverflow.ellipsis),
+          Text(widget.driver ? 'Your trip companion' : 'Your child’s bus',
+              style: const TextStyle(fontSize: 12, color: Colors.white70)),
+        ]),
+        actions: [
           IconButton(
               tooltip: 'Shared devices',
               icon: const Icon(Icons.share_location),
               onPressed: () => Navigator.of(context).push(
                   MaterialPageRoute<void>(
                       builder: (_) => const SharedDevicesScreen())))
-        ], title: Text(_plate.isEmpty ? 'Live Bus Map' : 'Live Map · $_plate')),
-        body: Column(children: [
-          Expanded(
-              child: _checkingMaps
-                  ? const Center(child: CircularProgressIndicator())
-                  : !_mapsReady
-                      ? TestingMap(
-                          point: _point == null
-                              ? null
-                              : geo.LatLng(_point!.latitude, _point!.longitude),
-                          route: _route
-                              .map((p) => geo.LatLng(p.latitude, p.longitude))
-                              .toList(),
-                          history: _history
-                              .map((p) => geo.LatLng(p.latitude, p.longitude))
-                              .toList(),
-                          stopNames:
-                              _stops.map((s) => s['name'] as String).toList(),
-                          plate: _plate,
-                        )
-                      : GoogleMap(
-                          initialCameraPosition: const CameraPosition(
-                              target: LatLng(7.4863, 80.3647), zoom: 15),
-                          onMapCreated: (controller) {
-                            _map = controller;
-                            if (_point != null) {
-                              controller
-                                  .moveCamera(CameraUpdate.newLatLng(_point!));
-                            }
-                          },
-                          polylines: {
-                            if (_route.isNotEmpty)
-                              Polyline(
-                                  polylineId: const PolylineId('sample'),
-                                  points: _route,
-                                  color: Colors.grey,
-                                  patterns: [
-                                    PatternItem.dash(12),
-                                    PatternItem.gap(8)
-                                  ]),
-                            if (_history.isNotEmpty)
-                              Polyline(
-                                  polylineId: const PolylineId('recorded'),
-                                  points: _history,
-                                  color: Colors.blue,
-                                  width: 5),
-                          },
-                          markers: {
-                            for (var i = 0; i < _stops.length; i++)
-                              Marker(
-                                  markerId: MarkerId('stop$i'),
-                                  position: _route[i],
-                                  infoWindow: InfoWindow(
-                                      title: _stops[i]['name'] as String),
-                                  icon: BitmapDescriptor.defaultMarkerWithHue(
-                                      BitmapDescriptor.hueGreen)),
-                            if (_point != null)
-                              Marker(
-                                  markerId: const MarkerId('bus'),
-                                  position: _point!,
-                                  infoWindow: InfoWindow(title: _plate))
-                          },
-                        )),
-          SafeArea(
-              top: false,
-              child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(children: [
-                    Text(_status, textAlign: TextAlign.center),
-                    if (_point != null)
-                      Text(
-                          'Bus coordinates: ${_point!.latitude.toStringAsFixed(5)}, ${_point!.longitude.toStringAsFixed(5)}'),
-                    if (!widget.driver)
-                      TextButton(
-                          onPressed: _loadBus,
-                          child: const Text('Refresh tracking')),
-                    const SizedBox(height: 8),
-                    if (!widget.driver)
-                      Text('$_child · $_childStatus',
-                          textAlign: TextAlign.center),
-                    const Text(
-                        'Grey: approximate sample school stops · Blue: recorded GPS trail',
-                        textAlign: TextAlign.center),
-                    if (widget.driver)
-                      const Text(
-                          'Keep this screen open during the trip. Sharing stops when you leave this screen or put the app in the background.',
-                          textAlign: TextAlign.center),
-                    const SizedBox(height: 12),
-                    if (widget.driver)
-                      FilledButton.icon(
-                        onPressed: _sharing
-                            ? _stop
-                            : _busy
-                                ? null
-                                : _busId == null
-                                    ? _loadBus
-                                    : _start,
-                        icon: Icon(_sharing ? Icons.stop : Icons.location_on),
-                        label: Text(_sharing
-                            ? 'Stop sharing'
-                            : _busy
-                                ? 'Starting…'
-                                : _busId == null
-                                    ? 'Retry bus assignment'
-                                    : 'Start sharing'),
-                      ),
-                  ]))),
-        ]),
-      );
+        ],
+      ),
+      body: LayoutBuilder(
+          builder: (context, constraints) => Column(children: [
+                Expanded(
+                    child: Stack(children: [
+                  Positioned.fill(
+                      child: Listener(
+                    onPointerDown: (_) {
+                      if (_followBus) setState(() => _followBus = false);
+                    },
+                    child: _mapView(),
+                  )),
+                  Positioned(
+                      top: 16,
+                      right: 16,
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: Material(
+                          elevation: 3,
+                          borderRadius: BorderRadius.circular(16),
+                          color: theme.colorScheme.surface,
+                          child: TextButton.icon(
+                            onPressed: _point == null ? null : _follow,
+                            icon: Icon(_followBus
+                                ? Icons.gps_fixed
+                                : Icons.my_location),
+                            label: Text(
+                                _followBus ? 'Following bus' : 'Follow bus'),
+                          ),
+                        ),
+                      )),
+                ])),
+                Material(
+                  color: theme.colorScheme.surface,
+                  elevation: 8,
+                  borderRadius:
+                      const BorderRadius.vertical(top: Radius.circular(24)),
+                  child: SafeArea(
+                      top: false,
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            maxHeight: constraints.maxHeight * 0.5),
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
+                          child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Container(
+                                          padding: const EdgeInsets.all(12),
+                                          decoration: BoxDecoration(
+                                              color:
+                                                  color.withValues(alpha: 0.1),
+                                              borderRadius:
+                                                  BorderRadius.circular(14)),
+                                          child: Icon(
+                                              _locationError
+                                                  ? Icons.wifi_off_rounded
+                                                  : Icons
+                                                      .directions_bus_rounded,
+                                              color: color)),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                          child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                            Text(title,
+                                                style: theme
+                                                    .textTheme.titleMedium
+                                                    ?.copyWith(
+                                                        fontWeight:
+                                                            FontWeight.w700,
+                                                        color: color)),
+                                            const SizedBox(height: 2),
+                                            Text(_ageLabel,
+                                                style:
+                                                    theme.textTheme.bodySmall),
+                                          ])),
+                                    ]),
+                                if (_point == null ||
+                                    _locationError ||
+                                    (_sharing && _lastUpload == null))
+                                  Padding(
+                                      padding: const EdgeInsets.only(top: 10),
+                                      child: Text(_status)),
+                                if (!widget.driver && _child.isNotEmpty)
+                                  Padding(
+                                      padding: const EdgeInsets.only(top: 12),
+                                      child: Text(
+                                          '$_child · ${_childStatus.isEmpty ? "Checking boarding status…" : _childStatus}',
+                                          style: theme.textTheme.bodyMedium)),
+                                const SizedBox(height: 14),
+                                if (widget.driver) ...[
+                                  FilledButton.icon(
+                                    style: _sharing
+                                        ? FilledButton.styleFrom(
+                                            backgroundColor:
+                                                theme.colorScheme.error)
+                                        : null,
+                                    onPressed: _sharing
+                                        ? _stop
+                                        : _busy
+                                            ? null
+                                            : _busId == null
+                                                ? _loadBus
+                                                : _start,
+                                    icon: _busy
+                                        ? const SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                                strokeWidth: 2))
+                                        : Icon(_sharing
+                                            ? Icons.stop_rounded
+                                            : Icons.navigation_rounded),
+                                    label: Text(_sharing
+                                        ? 'Stop sharing'
+                                        : _busy
+                                            ? 'Starting…'
+                                            : _busId == null
+                                                ? 'Retry bus assignment'
+                                                : 'Start sharing'),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Text(
+                                      _sharing
+                                          ? 'Keep this screen open so parents can follow the bus.'
+                                          : 'Share your phone’s location with parents assigned to this bus.',
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodySmall),
+                                ] else
+                                  OutlinedButton.icon(
+                                      onPressed: _reading ? null : _loadBus,
+                                      icon: const Icon(Icons.refresh_rounded),
+                                      label: const Text('Refresh tracking')),
+                                Theme(
+                                  data: theme.copyWith(
+                                      dividerColor: Colors.transparent),
+                                  child: ExpansionTile(
+                                    tilePadding: EdgeInsets.zero,
+                                    childrenPadding:
+                                        const EdgeInsets.only(bottom: 12),
+                                    title: const Text('Trip details'),
+                                    leading: const Icon(
+                                        Icons.info_outline_rounded,
+                                        size: 20),
+                                    children: [
+                                      if (_point != null)
+                                        Align(
+                                            alignment: Alignment.centerLeft,
+                                            child: SelectableText(
+                                                'Bus coordinates: ${_point!.latitude.toStringAsFixed(5)}, ${_point!.longitude.toStringAsFixed(5)}')),
+                                      const SizedBox(height: 8),
+                                      const Align(
+                                          alignment: Alignment.centerLeft,
+                                          child: Text(
+                                              'Blue line: recorded journey · Grey line: sample route · Green pins: sample stops')),
+                                      if (widget.driver)
+                                        const Padding(
+                                            padding: EdgeInsets.only(top: 8),
+                                            child: Text(
+                                                'Sharing stops when you leave this screen or put the app in the background.')),
+                                    ],
+                                  ),
+                                ),
+                              ]),
+                        ),
+                      )),
+                ),
+              ])),
+    );
+  }
 
   @override
   void dispose() {
@@ -474,6 +665,7 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
     _positions?.cancel();
     _poll?.cancel();
     _detailsPoll?.cancel();
+    _statusClock?.cancel();
     _map?.dispose();
     super.dispose();
   }

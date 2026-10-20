@@ -10,13 +10,18 @@ class TestingMap extends StatefulWidget {
       required this.route,
       required this.history,
       required this.stopNames,
-      required this.plate});
+      required this.plate,
+      this.followBus = true,
+      this.showRecenter = true,
+      this.recenterSignal = 0});
 
   final LatLng? point;
   final List<LatLng> route;
   final List<LatLng> history;
   final List<String> stopNames;
   final String plate;
+  final bool followBus, showRecenter;
+  final int recenterSignal;
 
   @override
   State<TestingMap> createState() => _TestingMapState();
@@ -29,7 +34,10 @@ class _TestingMapState extends State<TestingMap> {
   @override
   void didUpdateWidget(covariant TestingMap oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (_ready && widget.point != null && widget.point != oldWidget.point) {
+    if (_ready &&
+        widget.point != null &&
+        ((widget.followBus && widget.point != oldWidget.point) ||
+            widget.recenterSignal != oldWidget.recenterSignal)) {
       _controller.move(widget.point!, _controller.camera.zoom);
     }
   }
@@ -83,21 +91,37 @@ class _TestingMapState extends State<TestingMap> {
                             child: const Icon(Icons.directions_bus,
                                 color: Colors.blue, size: 34)))),
             ]),
-            const SimpleAttributionWidget(
-                source: Text('OpenStreetMap contributors')),
+            SafeArea(
+                child: Align(
+              alignment: Alignment.bottomRight,
+              child: Material(
+                color: Theme.of(context).colorScheme.surface,
+                child: Padding(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                  child: Row(mainAxisSize: MainAxisSize.min, children: [
+                    Text('© ', style: Theme.of(context).textTheme.bodySmall),
+                    Flexible(
+                        child: Text('OpenStreetMap contributors',
+                            style: Theme.of(context).textTheme.bodySmall)),
+                  ]),
+                ),
+              ),
+            )),
           ],
         ),
-        Positioned(
-            top: 12,
-            right: 12,
-            child: FloatingActionButton.small(
-              heroTag: 'recenter-testing-map',
-              tooltip: 'Center on bus',
-              onPressed: widget.point == null
-                  ? null
-                  : () => _controller.move(widget.point!, 15),
-              child: const Icon(Icons.my_location),
-            )),
+        if (widget.showRecenter)
+          Positioned(
+              top: 12,
+              right: 12,
+              child: FloatingActionButton.small(
+                heroTag: 'recenter-testing-map',
+                tooltip: 'Center on bus',
+                onPressed: widget.point == null
+                    ? null
+                    : () => _controller.move(widget.point!, 15),
+                child: const Icon(Icons.my_location),
+              )),
       ]);
 
   @override

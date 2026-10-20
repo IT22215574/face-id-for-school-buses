@@ -15,6 +15,12 @@ void main() {
   for (final detailsFail in [false, true]) {
     testWidgets('Parent tracks GPS when optional details fail: $detailsFail',
         (tester) async {
+      if (detailsFail) {
+        tester.view.physicalSize = const Size(320, 700);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+      }
       const channel = MethodChannel('school_bus/maps_configuration');
       tester.binding.defaultBinaryMessenger
           .setMockMethodCallHandler(channel, (_) async => false);
@@ -70,10 +76,17 @@ void main() {
         handler.resolve(
             Response(requestOptions: request, data: data, statusCode: 200));
       }));
-      await tester.pumpWidget(ProviderScope(overrides: [
-        apiClientProvider.overrideWithValue(client),
-        selectedChildProvider.overrideWith((ref) => 1),
-      ], child: const MaterialApp(home: LiveMapScreen(driver: false))));
+      await tester.pumpWidget(ProviderScope(
+          overrides: [
+            apiClientProvider.overrideWithValue(client),
+            selectedChildProvider.overrideWith((ref) => 1),
+          ],
+          child: MaterialApp(
+              builder: (context, child) => MediaQuery(
+                  data: MediaQuery.of(context).copyWith(
+                      textScaler: TextScaler.linear(detailsFail ? 1.4 : 1)),
+                  child: child!),
+              home: const LiveMapScreen(driver: false))));
       await tester.pumpAndSettle();
       expect(
           find.textContaining(detailsFail
@@ -81,15 +94,26 @@ void main() {
               : 'Aisha · Last boarding event: on bus'),
           findsOneWidget);
       expect(find.textContaining('Bus location is stale'), findsOneWidget);
+      expect(find.text('Following bus'), findsOneWidget);
+      await tester.drag(find.byType(osm.FlutterMap), const Offset(60, 10));
+      await tester.pumpAndSettle();
+      expect(find.text('Follow bus'), findsOneWidget);
+      await tester.tap(find.text('Follow bus'));
+      await tester.pumpAndSettle();
+      expect(find.text('Following bus'), findsOneWidget);
+      await tester.ensureVisible(find.text('Trip details'));
+      await tester.tap(find.text('Trip details'));
+      await tester.pumpAndSettle();
       expect(find.textContaining('7.48630, 80.36470'), findsOneWidget);
       expect(find.text('Start sharing'), findsNothing);
+      expect(tester.takeException(), isNull);
       expect(locationReads, 1);
       await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
       expect(locationReads, 2);
       expect(find.textContaining('7.48730, 80.36470'), findsOneWidget);
       await tester.pumpWidget(const SizedBox());
-    }, variant: TargetPlatformVariant({TargetPlatform.iOS}));
+    }, variant: const TargetPlatformVariant({TargetPlatform.iOS}));
   }
 
   for (final missingChannel in [false, true]) {
@@ -125,6 +149,6 @@ void main() {
       expect(find.byType(osm.FlutterMap), findsOneWidget);
       expect(find.text('OpenStreetMap contributors'), findsOneWidget);
       expect(tester.takeException(), isNull);
-    }, variant: TargetPlatformVariant({TargetPlatform.iOS}));
+    }, variant: const TargetPlatformVariant({TargetPlatform.iOS}));
   }
 }
