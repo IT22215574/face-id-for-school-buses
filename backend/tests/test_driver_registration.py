@@ -15,10 +15,10 @@ from app.core.encryption import decrypt_text, settings
 
 def values():
     photo = 'data:image/png;base64,' + base64.b64encode(b'\x89PNG\r\n\x1a\nexample').decode()
-    return dict(name='Test Driver', phone='0771234567', email='DRIVER@example.com', nic='123456789V', address='School Road', id_front=photo, id_back=photo, password='password123', license_no='LIC1234', bus_id=1)
+    return dict(name='Test Driver', phone='0771234567', email='DRIVER@example.com', nic='123456789V', address='School Road', id_front=photo, id_back=photo, password='password123', license_front=photo, bus_id=1)
 
 
-@pytest.mark.parametrize('field,value', [('name', ' '), ('phone', 'abc1234567'), ('email', 'invalid'), ('id_front', 'bad'), ('id_back', 'data:image/png;base64,aGVsbG8='), ('password', '12345678'), ('bus_id', 0), ('address', ' ')])
+@pytest.mark.parametrize('field,value', [('name', ' '), ('phone', 'abc1234567'), ('email', 'invalid'), ('id_front', 'bad'), ('license_front', 'bad'), ('license_front', None), ('id_back', 'data:image/png;base64,aGVsbG8='), ('password', '12345678'), ('bus_id', 0), ('address', ' ')])
 def test_validation(field, value):
     data = values()
     data[field] = value
@@ -35,7 +35,7 @@ def test_registration_account_assignment_and_encryption(monkeypatch):
         db.add_all([admin, Bus(plate_no='BUS1', device_id='DEV1', route_name='School route')])
         db.commit()
         data = values()
-        assistant = {k: v for k, v in values().items() if k not in {'bus_id', 'license_no', 'password'}}
+        assistant = {k: v for k, v in values().items() if k not in {'bus_id', 'license_front', 'password'}}
         assistant.update(name='Bus Assistant', email='assistant@example.com', phone='0772345678', nic='987654321V')
         data['assistant'] = assistant
         result = register_driver(DriverRegistrationCreate(**data), db, admin)
@@ -44,7 +44,11 @@ def test_registration_account_assignment_and_encryption(monkeypatch):
         assert driver.user.email == 'driver@example.com'
         assert driver.user.password_hash != 'password123'
         assert driver.bus_id == 1
+        assert driver.license_no == ''
+        details = driver_registration_details(driver.id, db, admin)
+        assert details['license_front'] == data['license_front']
         record = db.get(DriverRegistration, driver.id)
+        assert data['license_front'] not in record.encrypted_details
         assert 'School Road' not in record.encrypted_details
         assert 'School Road' in decrypt_text(record.encrypted_details)
         assert 'Bus Assistant' not in record.encrypted_details
@@ -53,7 +57,7 @@ def test_registration_account_assignment_and_encryption(monkeypatch):
             register_driver(DriverRegistrationCreate(**values()), db, admin)
         assert exc.value.status_code == 409
         assert db.query(Driver).count() == 1
-        other = values() | dict(email='other@example.com', phone='0772345678', nic='987654321V', license_no='LIC5678')
+        other = values() | dict(email='other@example.com', phone='0772345678', nic='987654321V')
         with pytest.raises(HTTPException) as exc:
             register_driver(DriverRegistrationCreate(**other), db, admin)
         assert exc.value.status_code == 409
@@ -71,7 +75,7 @@ def test_assistant_requires_complete_valid_details():
     data['assistant'] = {'name': 'Helper'}
     with pytest.raises(ValidationError):
         DriverRegistrationCreate(**data)
-    assistant = {k: v for k, v in values().items() if k not in {'bus_id', 'license_no', 'password'}}
+    assistant = {k: v for k, v in values().items() if k not in {'bus_id', 'license_front', 'password'}}
     assistant.update(name='Bus Assistant', email='assistant@example.com', phone='0772345678', nic='987654321V')
     data['assistant'] = assistant
     assert DriverRegistrationCreate(**data).assistant.name == 'Bus Assistant'

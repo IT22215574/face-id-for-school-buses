@@ -4,7 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:school_bus_parent_app/features/admin/admin_screen.dart';
 
 void main() {
-  testWidgets('Registration requires driver details, both photos and a bus',
+  testWidgets(
+      'Registration requires driver details, ID and licence photos and a bus',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(
         child: MaterialApp(
@@ -20,6 +21,8 @@ void main() {
     expect(find.text('Select a bus and route'), findsOneWidget);
     expect(find.text('Upload ID front photo'), findsOneWidget);
     expect(find.text('Upload ID back photo'), findsOneWidget);
+    expect(find.text('Upload Driving licence front photo'), findsOneWidget);
+    expect(find.text('Driving licence number'), findsNothing);
     expect(
         find.text('Enter Full name (at least 2 characters)'), findsOneWidget);
     expect(find.textContaining('Unable to save'), findsNothing);

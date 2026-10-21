@@ -215,8 +215,8 @@ def register_driver(payload: DriverRegistrationCreate, db: Session = Depends(get
         raise HTTPException(404, 'Select an existing bus and route')
     if db.query(Parent).filter((func.lower(Parent.email) == payload.email) | (Parent.phone == payload.phone)).first():
         raise HTTPException(409, 'Email or phone is already registered')
-    if db.query(Driver).filter((Driver.nic == payload.nic) | (Driver.license_no == payload.license_no)).first():
-        raise HTTPException(409, 'Driver ID or driving licence is already registered')
+    if db.query(Driver).filter(Driver.nic == payload.nic).first():
+        raise HTTPException(409, 'Driver ID is already registered')
     if db.query(Driver).filter_by(bus_id=payload.bus_id, status='ACTIVE').first():
         raise HTTPException(409, 'This bus already has an active driver')
     if payload.assistant and (payload.assistant.nic == payload.nic or payload.assistant.phone == payload.phone or payload.assistant.email == payload.email):
@@ -229,7 +229,7 @@ def register_driver(payload: DriverRegistrationCreate, db: Session = Depends(get
         db.add(user)
         db.flush()
         driver = Driver(user_id=user.id, name=payload.name, phone=payload.phone,
-                        nic=payload.nic, license_no=payload.license_no, bus_id=payload.bus_id, status='ACTIVE')
+                        nic=payload.nic, license_no='', bus_id=payload.bus_id, status='ACTIVE')
         db.add(driver)
         db.flush()
         db.add(DriverRegistration(driver_id=driver.id, encrypted_details=encrypted))

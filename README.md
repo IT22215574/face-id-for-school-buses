@@ -164,3 +164,17 @@ drivers may read/share only their active assigned bus.
 
 School references: [Maliyadeva College](https://www.maliyadeva.edu.lk/contact-us)
 and [Maliyadeva Balika Vidyalaya](https://bmvmaliyadeva.sch.lk/index.php/about-our-school/identity/school-profile).
+
+## React admin website (`admin-web`)
+
+The React admin workspace shares the Flutter app's backend and database. It supports administrator sign-in, driver creation with document uploads and assistant details, bus assignment, and creating/editing buses and named routes.
+
+```sh
+cd admin-web
+npm install
+npm run dev
+```
+
+With the backend running on port 8000, open http://localhost:5173/admin-web/.
+For the backend to serve the website directly, run `npm run build` in `admin-web`, restart the API, and open http://localhost:8000/admin-web/.
+See [admin-web/README.md](admin-web/README.md) for configuration and deployment details.

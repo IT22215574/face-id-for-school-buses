@@ -34,13 +34,19 @@ class IdentityDetails(BaseModel):
             raise ValueError('Upload a valid JPEG or PNG image') from None
         valid = (header == 'data:image/jpeg;base64' and raw.startswith(b'\xff\xd8\xff')) or (header == 'data:image/png;base64' and raw.startswith(b'\x89PNG\r\n\x1a\n'))
         if not valid or len(raw) > 2 * 1024 * 1024:
-            raise ValueError('ID photos must be JPEG or PNG, at most 2 MB each')
+            raise ValueError('Photos must be JPEG or PNG, at most 2 MB each')
         return value
 
 
 class DriverRegistrationCreate(IdentityDetails):
     password: str = Field(min_length=8, max_length=72)
-    license_no: Annotated[str, StringConstraints(min_length=5, max_length=80)]
+    license_front: Photo
+
+    @field_validator('license_front')
+    @classmethod
+    def validate_license_photo(cls, value):
+        return cls.validate_photo(value)
+
     bus_id: int = Field(gt=0)
     assistant: IdentityDetails | None = None
 

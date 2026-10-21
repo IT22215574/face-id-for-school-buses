@@ -67,9 +67,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 ListTile(
                     title: Text(key.replaceAll('_', ' ').toUpperCase()),
                     subtitle: Text(p[key].toString())),
-            for (final key in ['id_front', 'id_back'])
+            for (final key in ['id_front', 'id_back', 'license_front'])
               if (p[key] != null) ...[
-                Text(key == 'id_front' ? 'ID front' : 'ID back'),
+                Text(key == 'license_front'
+                    ? 'Driving licence front'
+                    : key == 'id_front'
+                        ? 'ID front'
+                        : 'ID back'),
                 Image.memory(base64Decode((p[key] as String).split(',').last),
                     height: 180,
                     errorBuilder: (_, __, ___) =>
@@ -312,7 +316,7 @@ class _DriverRegistrationScreenState
       if (image == null) return;
       if (await image.length() > 2 * 1024 * 1024) {
         if (mounted) {
-          setState(() => error = 'Each ID photo must be at most 2 MB.');
+          setState(() => error = 'Each photo must be at most 2 MB.');
         }
         return;
       }
@@ -398,7 +402,7 @@ class _DriverRegistrationScreenState
           .post('/admin/driver-registrations', data: {
         ...details(''),
         'password': controller('password').text,
-        'license_no': controller('license_no').text.trim(),
+        'license_front': photos['license_front'],
         'bus_id': busId,
         'assistant': assistant ? details('assistant_') : null
       });
@@ -443,8 +447,8 @@ class _DriverRegistrationScreenState
                                     Theme.of(context).textTheme.headlineSmall),
                             const SizedBox(height: 16),
                             ...identity(''),
-                            field('license_no', 'Driving licence number',
-                                min: 5, max: 80),
+                            photo(
+                                'license_front', 'Driving licence front photo'),
                             field('password', 'Login password',
                                 password: true, min: 8, max: 72),
                             DropdownButtonFormField<int>(
@@ -484,7 +488,7 @@ class _DriverRegistrationScreenState
                               ...identity('assistant_')
                             ],
                             const Text(
-                                'ID photos: JPEG or PNG, up to 2 MB per side. The driver signs in with the email and password entered above.'),
+                                'ID and driving licence photos: JPEG or PNG, up to 2 MB each. The driver signs in with the email and password entered above.'),
                             if (error != null)
                               Padding(
                                   padding:
