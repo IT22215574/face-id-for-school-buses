@@ -6,7 +6,7 @@ from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
 Phone = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r'^[0-9]{10}$')]
 Identity = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=30, pattern=r'^[0-9]+V?$')]
-Photo = Annotated[str, Field(max_length=2800000)]
+Photo = Annotated[str, Field(max_length=6990532)]
 
 
 class IdentityDetails(BaseModel):
@@ -33,8 +33,8 @@ class IdentityDetails(BaseModel):
         except (ValueError, binascii.Error):
             raise ValueError('Upload a valid JPEG or PNG image') from None
         valid = (header == 'data:image/jpeg;base64' and raw.startswith(b'\xff\xd8\xff')) or (header == 'data:image/png;base64' and raw.startswith(b'\x89PNG\r\n\x1a\n'))
-        if not valid or len(raw) > 2 * 1024 * 1024:
-            raise ValueError('Photos must be JPEG or PNG, at most 2 MB each')
+        if not valid or len(raw) > 5 * 1024 * 1024:
+            raise ValueError('Photos must be JPEG or PNG, at most 5 MB each')
         return value
 
 
@@ -56,3 +56,14 @@ class DriverRegistrationCreate(IdentityDetails):
         if len(value.encode()) > 72 or not any(c.isalpha() for c in value) or not any(c.isdigit() for c in value):
             raise ValueError('Password must contain letters and numbers and be at most 72 bytes')
         return value
+
+
+class DriverRegistrationUpdate(DriverRegistrationCreate):
+    password: str | None = Field(default=None, min_length=8, max_length=72)
+
+    @field_validator('password')
+    @classmethod
+    def validate_password(cls, value):
+        if value is None:
+            return None
+        return super().validate_password(value)

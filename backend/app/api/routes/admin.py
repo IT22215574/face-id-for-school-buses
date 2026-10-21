@@ -12,7 +12,7 @@ from app.models.parent_student import ParentStudent
 from app.models.student import Student
 from app.schemas.admin import ParentCreate, ParentOut, StudentCreate, StudentOut, BusCreate, BusOut
 from app.schemas.parent import ParentStudentLink
-from app.schemas.driver_registration import DriverRegistrationCreate
+from app.schemas.driver_registration import DriverRegistrationCreate, DriverRegistrationUpdate
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -138,7 +138,12 @@ def update_bus(bus_id: int, payload: BusCreate, db: Session = Depends(get_db), a
     bus.plate_no = payload.plate_no
     bus.device_id = payload.device_id
     bus.route_name = payload.route_name
-    db.commit()
+    from sqlalchemy.exc import IntegrityError
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, 'Bus plate or device identifier is already registered') from None
     db.refresh(bus)
     return bus
 
@@ -148,6 +153,7 @@ def delete_bus(bus_id: int, db: Session = Depends(get_db), admin: Parent = Depen
     bus = db.get(Bus, bus_id)
     if bus is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bus not found")
+    reject_references(db, Bus.__table__, bus.id)
     db.delete(bus)
     db.commit()
     return {"message": "Bus deleted"}
@@ -250,6 +256,81 @@ def driver_registration_details(driver_id: int, db: Session = Depends(get_db), a
     if driver is None:
         raise HTTPException(404, 'Driver not found')
     registration = db.get(DriverRegistration, driver_id)
-    return dict(name=driver.name, phone=driver.phone, email=driver.user.email,
+    return dict(id=driver.id, bus_id=driver.bus_id, name=driver.name, phone=driver.phone, email=driver.user.email,
                 nic=driver.nic, license_no=driver.license_no,
                 **(json.loads(decrypt_text(registration.encrypted_details)) if registration else {}))
+
+
+def reject_references(db, table, record_id, allowed=()):
+    """Prevent deleting records with linked operational or financial data."""
+    from sqlalchemy import select
+    for child in table.metadata.sorted_tables:
+        if child.name in allowed:
+            continue
+        for column in child.columns:
+            if any(fk.column.table is table for fk in column.foreign_keys):
+                if db.execute(select(column).where(column == record_id).limit(1)).first():
+                    raise HTTPException(409, f'Remove or reassign linked {child.name.replace("_", " ")} before deleting')
+
+
+@router.put('/driver-registrations/{driver_id}')
+def update_driver_registration(driver_id: int, payload: DriverRegistrationUpdate, db: Session = Depends(get_db), admin: Parent = Depends(require_admin)):
+    from sqlalchemy import func
+    from sqlalchemy.exc import IntegrityError
+    from app.models.payroll import Driver
+    from app.models.driver_registration import DriverRegistration
+    from app.core.encryption import encrypt_text
+    driver = db.get(Driver, driver_id)
+    if driver is None:
+        raise HTTPException(404, 'Driver not found')
+    if db.get(Bus, payload.bus_id) is None:
+        raise HTTPException(404, 'Select an existing bus and route')
+    if db.query(Parent).filter(Parent.id != driver.user_id, (func.lower(Parent.email) == payload.email) | (Parent.phone == payload.phone)).first():
+        raise HTTPException(409, 'Email or phone is already registered')
+    if db.query(Driver).filter(Driver.id != driver_id, Driver.nic == payload.nic).first():
+        raise HTTPException(409, 'Driver ID is already registered')
+    if db.query(Driver).filter(Driver.id != driver_id, Driver.bus_id == payload.bus_id, Driver.status == 'ACTIVE').first():
+        raise HTTPException(409, 'This bus already has an active driver')
+    if payload.assistant and (payload.assistant.nic == payload.nic or payload.assistant.phone == payload.phone or payload.assistant.email == payload.email):
+        raise HTTPException(422, 'Assistant must have separate ID and contact details')
+    try:
+        for key in ('name', 'phone', 'nic', 'bus_id'):
+            setattr(driver, key, getattr(payload, key))
+        for key in ('name', 'phone', 'email'):
+            setattr(driver.user, key, getattr(payload, key))
+        if payload.password is not None:
+            driver.user.password_hash = hash_password(payload.password)
+            for token in driver.user.refresh_tokens:
+                token.revoked = True
+        encrypted = encrypt_text(payload.model_dump_json(exclude={'password', 'bus_id', 'name', 'phone', 'email', 'nic'}))
+        registration = db.get(DriverRegistration, driver_id)
+        if registration:
+            registration.encrypted_details = encrypted
+        else:
+            db.add(DriverRegistration(driver_id=driver_id, encrypted_details=encrypted))
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(409, 'Account or driver details are already registered') from None
+    return {'id': driver.id, 'message': 'Driver updated'}
+
+
+@router.delete('/driver-registrations/{driver_id}')
+def delete_driver_registration(driver_id: int, db: Session = Depends(get_db), admin: Parent = Depends(require_admin)):
+    from app.models.payroll import Driver
+    from app.models.driver_registration import DriverRegistration
+    driver = db.get(Driver, driver_id)
+    if driver is None:
+        raise HTTPException(404, 'Driver not found')
+    reject_references(db, Driver.__table__, driver_id, ('driver_registrations',))
+    user = driver.user
+    reject_references(db, Parent.__table__, user.id, ('drivers', 'refresh_tokens', 'notifications'))
+    registration = db.get(DriverRegistration, driver_id)
+    if registration:
+        db.delete(registration)
+        db.flush()
+    db.delete(driver)
+    db.flush()
+    db.delete(user)
+    db.commit()
+    return {'message': 'Driver and login deleted'}

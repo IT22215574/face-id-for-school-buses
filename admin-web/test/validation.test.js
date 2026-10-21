@@ -36,8 +36,8 @@ test('async photo completion preserves edits and independently selected photos',
 
 test('photo type validation handles JPEG, PNG, invalid files and size limit', () => {
   assert.equal(photoType(new Uint8Array([255,216,255]), 3), 'jpeg');
-  assert.equal(photoType(new Uint8Array([137,80,78,71,13,10,26,10]), 2 * 1024 * 1024), 'png');
-  assert.throws(() => photoType(new Uint8Array([255,216,255]), 2 * 1024 * 1024 + 1), /2 MB/);
+  assert.equal(photoType(new Uint8Array([137,80,78,71,13,10,26,10]), 5 * 1024 * 1024), 'png');
+  assert.throws(() => photoType(new Uint8Array([255,216,255]), 5 * 1024 * 1024 + 1), /5 MB/);
   assert.throws(() => photoType(new Uint8Array([137,80,78,71]), 4), /JPEG or PNG/);
   assert.throws(() => photoType(new Uint8Array(), 0), /JPEG or PNG/);
 });

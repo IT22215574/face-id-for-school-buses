@@ -20,3 +20,13 @@ def test_admin_web_entry_point():
 def test_admin_api_requires_authentication(path):
     response = TestClient(app).get(path)
     assert response.status_code in (401, 403)
+
+
+@pytest.mark.parametrize('method,path', [
+    ('put', '/admin/driver-registrations/1'),
+    ('delete', '/admin/driver-registrations/1'),
+    ('delete', '/admin/buses/1'),
+])
+def test_admin_mutations_require_authentication(method, path):
+    response = getattr(TestClient(app), method)(path)
+    assert response.status_code in (401, 403)

@@ -21,7 +21,7 @@ export function patchIdentity(setValue, key, value) {
 }
 
 export function photoType(bytes, size) {
-  if (size > 2 * 1024 * 1024) throw new Error('Choose a photo no larger than 2 MB.');
+  if (size > 5 * 1024 * 1024) throw new Error('Choose a photo no larger than 5 MB.');
   if ([137,80,78,71,13,10,26,10].every((b,i) => bytes[i] === b)) return 'png';
   if (bytes[0] === 255 && bytes[1] === 216 && bytes[2] === 255) return 'jpeg';
   throw new Error('Choose a JPEG or PNG photo.');

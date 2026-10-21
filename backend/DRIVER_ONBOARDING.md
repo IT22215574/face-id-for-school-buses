@@ -6,7 +6,7 @@ Sign in to the Flutter application using an existing account whose role is `ADMI
 
 1. Select **Create bus & route** and enter the registration plate, device identifier, and route/destinations, or use an existing bus.
 2. Select **Create driver**. Enter name, phone, email, national ID, address, driving licence and login password.
-3. Upload front and back ID photos as JPEG or PNG, up to 2 MB per photo.
+3. Upload front and back ID photos as JPEG or PNG, up to 5 MB per photo.
 4. Select the bus and route. A bus with an active driver cannot be assigned again through onboarding.
 5. Enable **Driver has an assistant** if applicable, then complete the assistant's contact and identity fields and both ID photos.
 6. Save. The driver can sign in using the entered email and password and accesses the assigned bus through the existing driver flow.

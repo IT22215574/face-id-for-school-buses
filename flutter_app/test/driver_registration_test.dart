@@ -27,4 +27,36 @@ void main() {
         find.text('Enter Full name (at least 2 characters)'), findsOneWidget);
     expect(find.textContaining('Unable to save'), findsNothing);
   });
+  testWidgets('Editing loads saved driver details and keeps password optional',
+      (tester) async {
+    const photo = 'data:image/png;base64,iVBORw0KGgo=';
+    await tester.pumpWidget(const ProviderScope(
+        child: MaterialApp(
+      home: DriverRegistrationScreen(
+        buses: [
+          {'id': 1, 'plate_no': 'BUS-1', 'route_name': 'School route'}
+        ],
+        existing: {
+          'id': 3,
+          'bus_id': 1,
+          'name': 'Saved Driver',
+          'email': 'saved@example.com',
+          'phone': '0771234567',
+          'nic': '123456789V',
+          'address': 'School Road',
+          'id_front': photo,
+          'id_back': photo,
+          'license_front': photo,
+        },
+      ),
+    )));
+    expect(find.text('Edit bus driver'), findsOneWidget);
+    expect(find.text('Saved Driver'), findsOneWidget);
+    final state = tester.state<FormState>(find.byType(Form));
+    expect(state.validate(), isTrue);
+    await tester.pump();
+    expect(find.text('Upload ID front photo'), findsNothing);
+    await tester.ensureVisible(find.text('Save driver changes'));
+    expect(find.text('Save driver changes'), findsOneWidget);
+  });
 }

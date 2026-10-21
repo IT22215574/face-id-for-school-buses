@@ -39,5 +39,5 @@ For Docker, mount the built `admin-web/dist` directory at `/admin-web/dist` in t
 - Writes go directly to the existing APIs and appear in Flutter after refreshing.
 
 Routes follow the backend's current model: each bus stores a route name.
-Photos accept JPEG/PNG up to 2 MB each and use the existing encrypted registration storage.
+Photos accept JPEG/PNG up to 5 MB each and use the existing encrypted registration storage.
 Access tokens remain in memory; reload requires signing in again. No passwords or photos are persisted in browser storage.

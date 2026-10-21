@@ -39,7 +39,8 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
       }
     } catch (_) {
       if (mounted) {
-        setState(() => error = 'Unable to load drivers. Please retry.');
+        setState(
+            () => error = 'Unable to load drivers and routes. Please retry.');
       }
     } finally {
       if (mounted) setState(() => loading = false);
@@ -111,18 +112,82 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
     }
   }
 
-  Future<void> createBus() async {
+  Future<void> editDriver(int id) async {
+    try {
+      final response = await ref
+          .read(apiClientProvider)
+          .dio
+          .get('/admin/driver-registrations/$id');
+      if (!mounted) return;
+      final saved = await Navigator.of(context).push<bool>(MaterialPageRoute(
+          builder: (_) => DriverRegistrationScreen(
+              buses: buses,
+              existing: Map<String, dynamic>.from(response.data as Map))));
+      if (saved == true && mounted) load();
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+            content: Text('Unable to load driver for editing. Please retry.')));
+      }
+    }
+  }
+
+  Future<void> deleteRecord(String kind, int id, String label) async {
+    final confirmed = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+                title: Text('Delete $label?'),
+                content: Text(
+                    'This cannot be undone.${kind == 'driver-registrations' ? ' The driver login will also be removed.' : ''}'),
+                actions: [
+                  TextButton(
+                      onPressed: () => Navigator.pop(context, false),
+                      child: const Text('Cancel')),
+                  FilledButton(
+                      onPressed: () => Navigator.pop(context, true),
+                      child: const Text('Delete'))
+                ]));
+    if (confirmed != true || !mounted) return;
+    try {
+      await ref.read(apiClientProvider).dio.delete('/admin/$kind/$id');
+      if (mounted) {
+        setState(() {
+          if (kind == 'buses') {
+            buses.removeWhere((b) => b['id'] == id);
+          } else {
+            drivers.removeWhere((d) => d['id'] == id);
+          }
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Deleted successfully.')));
+      }
+    } catch (e) {
+      final detail = e is DioException && e.response?.data is Map
+          ? e.response?.data['detail']
+          : null;
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+            content: Text(detail is String
+                ? detail
+                : 'Unable to delete. Please retry.')));
+      }
+    }
+  }
+
+  Future<void> saveBus([Map<String, dynamic>? existing]) async {
     final formKey = GlobalKey<FormState>();
-    final plate = TextEditingController(),
-        device = TextEditingController(),
-        route = TextEditingController();
+    final plate = TextEditingController(text: existing?['plate_no'] as String?),
+        device = TextEditingController(text: existing?['device_id'] as String?),
+        route = TextEditingController(text: existing?['route_name'] as String?);
     bool busy = false;
     String? failure;
     final saved = await showDialog<bool>(
         context: context,
         builder: (context) => StatefulBuilder(
             builder: (context, update) => AlertDialog(
-                  title: const Text('Create bus & route'),
+                  title: Text(existing == null
+                      ? 'Create bus & route'
+                      : 'Edit bus & route'),
                   content: Form(
                       key: formKey,
                       child: SingleChildScrollView(
@@ -154,28 +219,49 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                 if (!formKey.currentState!.validate()) return;
                                 update(() => busy = true);
                                 try {
-                                  await ref
-                                      .read(apiClientProvider)
-                                      .dio
-                                      .post('/admin/buses', data: {
+                                  final api = ref.read(apiClientProvider).dio;
+                                  final data = {
                                     'plate_no': plate.text.trim(),
                                     'device_id': device.text.trim(),
                                     'route_name': route.text.trim()
-                                  });
+                                  };
+                                  final response = existing == null
+                                      ? await api.post('/admin/buses',
+                                          data: data)
+                                      : await api.put(
+                                          '/admin/buses/${existing['id']}',
+                                          data: data);
+                                  if (mounted) {
+                                    setState(() {
+                                      final savedBus =
+                                          Map<String, dynamic>.from(
+                                              response.data as Map);
+                                      buses = [
+                                        savedBus,
+                                        ...buses.where((bus) =>
+                                            bus['id'] != savedBus['id'])
+                                      ];
+                                    });
+                                  }
                                   if (context.mounted) {
                                     Navigator.pop(context, true);
                                   }
-                                } catch (_) {
+                                } catch (e) {
                                   if (context.mounted) {
                                     update(() {
                                       busy = false;
-                                      failure =
-                                          'Unable to create bus. Check for duplicate plate or device.';
+                                      final detail = e is DioException &&
+                                              e.response?.data is Map
+                                          ? e.response?.data['detail']
+                                          : null;
+                                      failure = detail is String
+                                          ? detail
+                                          : 'Unable to save bus and route. Please retry.';
                                     });
                                   }
                                 }
                               },
-                        child: Text(busy ? 'Saving…' : 'Create bus'))
+                        child: Text(busy ? 'Saving…' : 'Save bus & route'))
                   ],
                 )));
     await Future<void>.delayed(const Duration(milliseconds: 300));
@@ -221,9 +307,46 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                             style: Theme.of(context).textTheme.headlineSmall),
                         const SizedBox(height: 8),
                         OutlinedButton.icon(
-                            onPressed: createBus,
+                            onPressed: () => saveBus(),
                             icon: const Icon(Icons.add_road),
                             label: const Text('Create bus & route')),
+                        Text('Saved buses & routes (${buses.length})',
+                            style: Theme.of(context).textTheme.titleLarge),
+                        if (buses.isEmpty)
+                          const Padding(
+                              padding: EdgeInsets.all(16),
+                              child: Text(
+                                  'No routes saved yet. Create a bus and route to get started.')),
+                        for (final bus in buses)
+                          Card(
+                              child: ListTile(
+                                  leading: const Icon(Icons.route),
+                                  title: Text(bus['route_name'] as String),
+                                  subtitle: Text(
+                                      '${bus['plate_no']}\nDevice: ${bus['device_id']}'),
+                                  isThreeLine: true,
+                                  trailing: PopupMenuButton<String>(
+                                      tooltip: 'Route actions',
+                                      onSelected: (action) {
+                                        if (action == 'edit') {
+                                          saveBus(Map<String, dynamic>.from(
+                                              bus as Map));
+                                        } else {
+                                          deleteRecord(
+                                              'buses',
+                                              bus['id'] as int,
+                                              bus['route_name'] as String);
+                                        }
+                                      },
+                                      itemBuilder: (_) => const [
+                                            PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Edit')),
+                                            PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Delete'))
+                                          ]))),
+                        const SizedBox(height: 24),
                         const Text(
                             'Create driver login accounts, assign their bus and route, and register an optional assistant.'),
                         if (drivers.isEmpty)
@@ -239,13 +362,34 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                                   subtitle: Text(
                                       '${driver['email']} · ${driver['phone']}\n${driver['plate_no'] ?? 'Unassigned'} · ${driver['route_name'] ?? 'No route'}'),
                                   isThreeLine: true,
-                                  trailing: Text(driver['status'] as String))),
+                                  trailing: PopupMenuButton<String>(
+                                      tooltip: 'Driver actions',
+                                      onSelected: (action) {
+                                        if (action == 'edit') {
+                                          editDriver(driver['id'] as int);
+                                        } else {
+                                          deleteRecord(
+                                              'driver-registrations',
+                                              driver['id'] as int,
+                                              driver['name'] as String);
+                                        }
+                                      },
+                                      itemBuilder: (_) => const [
+                                            PopupMenuItem(
+                                                value: 'edit',
+                                                child: Text('Edit')),
+                                            PopupMenuItem(
+                                                value: 'delete',
+                                                child: Text('Delete'))
+                                          ]))),
                       ]),
       );
 }
 
 class DriverRegistrationScreen extends ConsumerStatefulWidget {
-  const DriverRegistrationScreen({super.key, required this.buses});
+  const DriverRegistrationScreen(
+      {super.key, required this.buses, this.existing});
+  final Map<String, dynamic>? existing;
   final List<dynamic> buses;
   @override
   ConsumerState<DriverRegistrationScreen> createState() =>
@@ -262,6 +406,29 @@ class _DriverRegistrationScreenState
   String? error;
   TextEditingController controller(String key) =>
       fields.putIfAbsent(key, TextEditingController.new);
+  @override
+  void initState() {
+    super.initState();
+    final existing = widget.existing;
+    if (existing == null) return;
+    void fill(Map<String, dynamic> data, String prefix) {
+      for (final key in ['name', 'phone', 'email', 'nic', 'address']) {
+        controller('$prefix$key').text = data[key]?.toString() ?? '';
+      }
+      for (final key in ['id_front', 'id_back', 'license_front']) {
+        if (data[key] is String) photos['$prefix$key'] = data[key] as String;
+      }
+    }
+
+    fill(existing, '');
+    busId = existing['bus_id'] as int?;
+    assistant = existing['assistant'] != null;
+    if (assistant) {
+      fill(Map<String, dynamic>.from(existing['assistant'] as Map),
+          'assistant_');
+    }
+  }
+
   @override
   void dispose() {
     for (final c in fields.values) {
@@ -291,6 +458,11 @@ class _DriverRegistrationScreenState
             decoration: InputDecoration(labelText: label, counterText: ''),
             validator: (value) {
               final text = (value ?? '').trim();
+              if (password &&
+                  widget.existing != null &&
+                  (value ?? '').isEmpty) {
+                return null;
+              }
               if (text.length < min) {
                 return 'Enter $label (at least $min characters)';
               }
@@ -314,9 +486,9 @@ class _DriverRegistrationScreenState
     try {
       final image = await ImagePicker().pickImage(source: ImageSource.gallery);
       if (image == null) return;
-      if (await image.length() > 2 * 1024 * 1024) {
+      if (await image.length() > 5 * 1024 * 1024) {
         if (mounted) {
-          setState(() => error = 'Each photo must be at most 2 MB.');
+          setState(() => error = 'Each photo must be at most 5 MB.');
         }
         return;
       }
@@ -396,16 +568,21 @@ class _DriverRegistrationScreenState
       error = null;
     });
     try {
-      await ref
-          .read(apiClientProvider)
-          .dio
-          .post('/admin/driver-registrations', data: {
+      final api = ref.read(apiClientProvider).dio;
+      final data = {
         ...details(''),
-        'password': controller('password').text,
+        if (widget.existing == null || controller('password').text.isNotEmpty)
+          'password': controller('password').text,
         'license_front': photos['license_front'],
         'bus_id': busId,
         'assistant': assistant ? details('assistant_') : null
-      });
+      };
+      if (widget.existing == null) {
+        await api.post('/admin/driver-registrations', data: data);
+      } else {
+        await api.put('/admin/driver-registrations/${widget.existing!['id']}',
+            data: data);
+      }
       if (mounted) Navigator.of(context).pop(true);
     } on DioException catch (e) {
       final detail =
@@ -431,7 +608,10 @@ class _DriverRegistrationScreenState
 
   @override
   Widget build(BuildContext context) => Scaffold(
-      appBar: AppBar(title: const Text('Create bus driver')),
+      appBar: AppBar(
+          title: Text(widget.existing == null
+              ? 'Create bus driver'
+              : 'Edit bus driver')),
       body: Center(
           child: ConstrainedBox(
               constraints: const BoxConstraints(maxWidth: 720),
@@ -449,8 +629,14 @@ class _DriverRegistrationScreenState
                             ...identity(''),
                             photo(
                                 'license_front', 'Driving licence front photo'),
-                            field('password', 'Login password',
-                                password: true, min: 8, max: 72),
+                            field(
+                                'password',
+                                widget.existing == null
+                                    ? 'Login password'
+                                    : 'New password (leave blank to keep current)',
+                                password: true,
+                                min: 8,
+                                max: 72),
                             DropdownButtonFormField<int>(
                                 initialValue: busId,
                                 isExpanded: true,
@@ -488,7 +674,7 @@ class _DriverRegistrationScreenState
                               ...identity('assistant_')
                             ],
                             const Text(
-                                'ID and driving licence photos: JPEG or PNG, up to 2 MB each. The driver signs in with the email and password entered above.'),
+                                'ID and driving licence photos: JPEG or PNG, up to 5 MB each. The driver signs in with the email and password entered above.'),
                             if (error != null)
                               Padding(
                                   padding:
@@ -504,7 +690,9 @@ class _DriverRegistrationScreenState
                                     ? null
                                     : save,
                                 child: Text(saving
-                                    ? 'Creating driver…'
-                                    : 'Create driver & assign bus')),
+                                    ? 'Saving driver…'
+                                    : widget.existing != null
+                                        ? 'Save driver changes'
+                                        : 'Create driver & assign bus')),
                           ]))))));
 }
