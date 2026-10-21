@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { validateField, patchIdentity, photoType } from '../src/validation.js';
 
 test('phone and email validation', () => {
-  for (const phone of ['0771234567', '+94771234567']) assert.equal(validateField('Phone number', phone), '');
-  for (const phone of ['abc1234567', '123', '077 1234567', '+1234567890123456']) assert.ok(validateField('Phone number', phone));
+  for (const phone of ['0771234567', '0712345678']) assert.equal(validateField('Phone number', phone), '');
+  for (const phone of ['+94771234567', '07712345678', 'abc1234567', '123', '077 1234567', '+1234567890123456']) assert.ok(validateField('Phone number', phone));
   assert.equal(validateField('Email address', 'driver@example.com'), '');
   for (const email of ['driver', 'driver@example', '@example.com', 'x y@example.com', 'x@example..com']) assert.ok(validateField('Email address', email));
 });
@@ -16,6 +16,9 @@ test('required fields, trimmed lengths, identity and password rules', () => {
   assert.equal(validateField('Full name', 'අමල් පෙරේරා'), '');
   assert.equal(validateField('National ID number', '123456789V'), '');
   assert.ok(validateField('National ID number', '1234!6789'));
+  assert.ok(validateField('National ID number', '123456789X'));
+  assert.ok(validateField('National ID number', 'V123456789'));
+  assert.equal(validateField('National ID number', '200012345678'), '');
   for (const password of ['12345678', 'password', 'abc123', 'a1' + 'é'.repeat(36)]) assert.ok(validateField('Login password', password));
   assert.equal(validateField('Login password', 'password123'), '');
   assert.ok(validateField('Route name', 'a'.repeat(121)));

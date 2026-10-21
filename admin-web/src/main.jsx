@@ -15,7 +15,7 @@ function validateForm(event) {
   }
   if (!form.reportValidity()) { event.preventDefault(); event.stopPropagation(); }
 }
-function Field({ label, onChange, ...props }) {
+function Field({ label, onChange, digitsOnly = false, ...props }) {
   const [error, setError] = useState('');
   const id = useId();
   function validate(input) {
@@ -25,7 +25,7 @@ function Field({ label, onChange, ...props }) {
   }
   return <label className="field"><span>{label}</span><input required {...props} data-field={label}
     aria-invalid={!!error} aria-describedby={error ? id : undefined}
-    onChange={e => { validate(e.target); onChange?.(e); }}
+    onChange={e => { if (digitsOnly) e.target.value = e.target.value.replace(/[^0-9]/g, ''); validate(e.target); onChange?.(e); }}
     onBlur={e => validate(e.target)}
     onInvalid={e => validate(e.target)}/>{error && <small id={id} className="field-error">{error}</small>}</label>;
 }
@@ -65,7 +65,7 @@ function Photo({ label, value, onChange, onPending }) {
 }
 function Identity({ value, onChange, onPending }) {
   const change = (key, data) => patchIdentity(onChange, key, data);
-  return <><div className="grid"><Field label="Full name" minLength={2} maxLength={120} value={value.name} onChange={e => change('name', e.target.value)}/><Field label="Phone number" type="tel" pattern="\+?[0-9]{10,15}" placeholder="0771234567" value={value.phone} onChange={e => change('phone', e.target.value)}/><Field label="Email address" type="email" maxLength={255} value={value.email} onChange={e => change('email', e.target.value)}/><Field label="National ID number" minLength={5} maxLength={30} value={value.nic} onChange={e => change('nic', e.target.value)}/><Field label="Residential address" minLength={5} maxLength={500} value={value.address} onChange={e => change('address', e.target.value)}/></div><div className="grid"><Photo onPending={onPending} label="ID front photo" value={value.id_front} onChange={v => change('id_front', v)}/><Photo onPending={onPending} label="ID back photo" value={value.id_back} onChange={v => change('id_back', v)}/></div></>;
+  return <><div className="grid"><Field label="Full name" minLength={2} maxLength={120} value={value.name} onChange={e => change('name', e.target.value)}/><Field label="Phone number" type="tel" inputMode="numeric" digitsOnly pattern="[0-9]{10}" minLength={10} maxLength={10} placeholder="0771234567" value={value.phone} onChange={e => change('phone', e.target.value)}/><Field label="Email address" type="email" maxLength={255} value={value.email} onChange={e => change('email', e.target.value)}/><div className="nic-fields"><Field label="National ID number" inputMode="numeric" digitsOnly pattern="[0-9]+" minLength={5} maxLength={29} value={value.nic.replace(/V$/, '')} onChange={e => { const digits = e.target.value; onChange(current => ({ ...current, nic: digits + (current.nic.endsWith('V') ? 'V' : '') })); }}/><label className="field"><span>ID suffix (optional)</span><select value={value.nic.endsWith('V') ? 'V' : ''} onChange={e => { const suffix = e.target.value; onChange(current => ({ ...current, nic: current.nic.replace(/V$/, '') + suffix })); }}><option value="">None</option><option value="V">V</option></select></label></div><Field label="Residential address" minLength={5} maxLength={500} value={value.address} onChange={e => change('address', e.target.value)}/></div><div className="grid"><Photo onPending={onPending} label="ID front photo" value={value.id_front} onChange={v => change('id_front', v)}/><Photo onPending={onPending} label="ID back photo" value={value.id_back} onChange={v => change('id_back', v)}/></div></>;
 }
 function App() {
   const pendingPhotos = useRef(0);

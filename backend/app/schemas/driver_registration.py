@@ -4,8 +4,8 @@ from typing import Annotated
 from pydantic import BaseModel, ConfigDict, EmailStr, Field, StringConstraints, field_validator
 
 Name = Annotated[str, StringConstraints(strip_whitespace=True, min_length=2, max_length=120)]
-Phone = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r'^\+?[0-9]{10,15}$')]
-Identity = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=30)]
+Phone = Annotated[str, StringConstraints(strip_whitespace=True, pattern=r'^[0-9]{10}$')]
+Identity = Annotated[str, StringConstraints(strip_whitespace=True, min_length=5, max_length=30, pattern=r'^[0-9]+V?$')]
 Photo = Annotated[str, Field(max_length=2800000)]
 
 

@@ -18,7 +18,7 @@ def values():
     return dict(name='Test Driver', phone='0771234567', email='DRIVER@example.com', nic='123456789V', address='School Road', id_front=photo, id_back=photo, password='password123', license_front=photo, bus_id=1)
 
 
-@pytest.mark.parametrize('field,value', [('name', ' '), ('phone', 'abc1234567'), ('email', 'invalid'), ('id_front', 'bad'), ('license_front', 'bad'), ('license_front', None), ('id_back', 'data:image/png;base64,aGVsbG8='), ('password', '12345678'), ('bus_id', 0), ('address', ' ')])
+@pytest.mark.parametrize('field,value', [('name', ' '), ('phone', 'abc1234567'), ('phone', '+94771234567'), ('phone', '07712345678'), ('nic', '123456789X'), ('nic', 'V123456789'), ('email', 'invalid'), ('id_front', 'bad'), ('license_front', 'bad'), ('license_front', None), ('id_back', 'data:image/png;base64,aGVsbG8='), ('password', '12345678'), ('bus_id', 0), ('address', ' ')])
 def test_validation(field, value):
     data = values()
     data[field] = value
