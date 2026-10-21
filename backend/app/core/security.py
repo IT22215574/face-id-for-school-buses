@@ -1,4 +1,5 @@
 import hashlib
+from uuid import uuid4
 from datetime import datetime, timedelta, timezone
 from typing import Any
 
@@ -40,7 +41,7 @@ def create_refresh_token(subject: str, expires_delta: timedelta | None = None) -
     if expires_delta is None:
         expires_delta = timedelta(days=settings.JWT_REFRESH_EXPIRE_DAYS)
     expire = datetime.now(timezone.utc) + expires_delta
-    to_encode = {"sub": subject, "exp": expire, "type": "refresh"}
+    to_encode = {"sub": subject, "exp": expire, "type": "refresh", "jti": uuid4().hex}
     return jwt.encode(to_encode, settings.JWT_SECRET, algorithm="HS256")
 
 

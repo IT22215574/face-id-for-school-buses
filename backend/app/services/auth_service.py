@@ -52,7 +52,11 @@ def refresh_token_pair(db: Session, refresh_token: str) -> tuple[str, str]:
     parent_id = int(payload.get("sub"))
     token_hash = sha256(refresh_token.encode("utf-8")).hexdigest()
     token_record = db.query(RefreshToken).filter(RefreshToken.parent_id == parent_id, RefreshToken.token_hash == token_hash).first()
-    if token_record is None or token_record.revoked or token_record.expires_at < datetime.now(timezone.utc):
+    # SQLite returns naive datetimes even for UTC values.
+    expires_at = token_record.expires_at if token_record else None
+    if expires_at is not None and expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if token_record is None or token_record.revoked or expires_at < datetime.now(timezone.utc):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Refresh token revoked or expired")
 
     token_record.revoked = True
