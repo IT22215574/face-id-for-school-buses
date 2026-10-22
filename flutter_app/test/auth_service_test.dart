@@ -15,7 +15,7 @@ class AuthAdapter implements HttpClientAdapter {
       Stream<Uint8List>? requestStream, Future<void>? cancelFuture) async {
     paths.add(options.path);
     final Map<String, Object> body;
-    if (options.path == '/auth/login') {
+    if (options.path == '/auth/login' || options.path == '/auth/register') {
       body = {'access_token': 'test-access', 'refresh_token': 'test-refresh'};
     } else {
       expect(options.path, '/me');
@@ -33,6 +33,32 @@ class AuthAdapter implements HttpClientAdapter {
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+  test('Signup sends parent details and establishes an authenticated session',
+      () async {
+    FlutterSecureStorage.setMockInitialValues({});
+    const storage = FlutterSecureStorage();
+    final client = ApiClient(storage);
+    final adapter = AuthAdapter('PARENT');
+    client.dio.httpClientAdapter = adapter;
+    client.dio.interceptors
+        .add(InterceptorsWrapper(onRequest: (options, handler) {
+      if (options.path == '/auth/register') {
+        expect(options.data, {
+          'name': 'Parent',
+          'phone': '0771234567',
+          'email': 'parent@example.com',
+          'password': 'password123'
+        });
+      }
+      handler.next(options);
+    }));
+    expect(
+        await AuthService(storage, client).register(
+            ' Parent ', '0771234567', 'parent@example.com', 'password123'),
+        AccountRole.parent);
+    expect(adapter.paths, ['/auth/register', '/me']);
+    expect(await storage.read(key: 'refresh_token'), 'test-refresh');
+  });
   for (final role in AccountRole.values) {
     test('Login retrieves ${role.name} role from the backend /me route',
         () async {

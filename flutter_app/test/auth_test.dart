@@ -18,6 +18,15 @@ class TestAuthService extends AuthService {
             ApiClient(const FlutterSecureStorage()));
   bool signedOut = false;
   @override
+  Future<AccountRole?> register(
+      String name, String phone, String email, String password) async {
+    expect(name, 'Test Parent');
+    expect(phone, '0771234567');
+    expect(email, 'parent@example.com');
+    return AccountRole.parent;
+  }
+
+  @override
   Future<AccountRole?> login(String email, String password) async {
     if (email == 'parent@example.com' && password == 'password123') {
       return AccountRole.parent;
@@ -46,6 +55,42 @@ void main() {
     await tester.tap(find.text('Sign in'));
     await tester.pumpAndSettle();
   }
+
+  testWidgets('Parent signup validates confirmation and opens child selection',
+      (tester) async {
+    tester.view.physicalSize = const Size(500, 1100);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    await tester.pumpWidget(ProviderScope(overrides: [
+      transportLoadProvider.overrideWith((ref) async {}),
+      transportStudentsProvider.overrideWith((ref) => []),
+      authServiceProvider.overrideWithValue(TestAuthService()),
+    ], child: const SchoolBusParentApp()));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('New parent? Sign up'));
+    await tester.pumpAndSettle();
+    final fields = find.byType(TextFormField);
+    for (final entry in [
+      'Test Parent',
+      '0771234567',
+      'parent@example.com',
+      'password123',
+      'wrong'
+    ].asMap().entries) {
+      await tester.enterText(fields.at(entry.key), entry.value);
+    }
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+    expect(find.text('Passwords do not match'), findsOneWidget);
+    await tester.enterText(fields.at(4), 'password123');
+    await tester.ensureVisible(find.text('Create account'));
+    await tester.tap(find.text('Create account'));
+    await tester.pumpAndSettle();
+    expect(find.byType(SelectChildScreen), findsOneWidget);
+    expect(find.textContaining('No children added yet'), findsOneWidget);
+  });
 
   for (final driver in [false, true]) {
     testWidgets(

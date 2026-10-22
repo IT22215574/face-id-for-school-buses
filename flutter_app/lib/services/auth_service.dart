@@ -10,9 +10,24 @@ class AuthService {
   final ApiClient _apiClient;
 
   Future<AccountRole?> login(String email, String password) async {
+    return _authenticate(
+        '/auth/login', {'email': email.trim(), 'password': password});
+  }
+
+  Future<AccountRole?> register(
+      String name, String phone, String email, String password) {
+    return _authenticate('/auth/register', {
+      'name': name.trim(),
+      'phone': phone.trim(),
+      'email': email.trim(),
+      'password': password,
+    });
+  }
+
+  Future<AccountRole?> _authenticate(
+      String path, Map<String, String> data) async {
     try {
-      final response = await _apiClient.dio.post('/auth/login',
-          data: {'email': email.trim(), 'password': password});
+      final response = await _apiClient.dio.post(path, data: data);
       final access = response.data['access_token'] as String;
       final refresh = response.data['refresh_token'] as String;
       await _storage.write(key: 'access_token', value: access);

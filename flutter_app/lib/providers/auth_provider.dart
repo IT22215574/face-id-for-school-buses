@@ -19,6 +19,12 @@ class AuthController extends StateNotifier<AccountRole?> {
     state = await _authService.login(email, password);
   }
 
+  Future<void> register(
+      String name, String phone, String email, String password) async {
+    state = null;
+    state = await _authService.register(name, phone, email, password);
+  }
+
   Future<void> logout() async {
     try {
       await _authService.logout();

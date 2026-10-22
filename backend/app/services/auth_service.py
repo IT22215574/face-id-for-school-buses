@@ -3,6 +3,7 @@ from hashlib import sha256
 
 from fastapi import HTTPException, status
 from sqlalchemy.orm import Session
+from sqlalchemy.exc import IntegrityError
 
 from app.core.security import create_access_token, create_refresh_token, hash_password, verify_password
 from app.models.parent import Parent
@@ -10,13 +11,18 @@ from app.models.refresh_token import RefreshToken
 
 
 def register_parent(db: Session, name: str, phone: str, email: str, password: str) -> Parent:
+    name, phone, email = name.strip(), phone.strip(), email.strip().lower()
     existing = db.query(Parent).filter((Parent.email == email) | (Parent.phone == phone)).first()
     if existing:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Parent already exists")
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email or phone is already in use")
 
     parent = Parent(name=name.strip(), phone=phone.strip(), email=email.strip().lower(), password_hash=hash_password(password))
     db.add(parent)
-    db.commit()
+    try:
+        db.commit()
+    except IntegrityError:
+        db.rollback()
+        raise HTTPException(status_code=409, detail="Email or phone is already in use")
     db.refresh(parent)
     return parent
 
