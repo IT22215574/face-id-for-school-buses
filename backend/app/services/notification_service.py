@@ -10,6 +10,10 @@ from app.models.notification import Notification
 from app.models.parent import Parent
 from app.models.student import Student
 
+class NotificationDeliveryUncertain(RuntimeError):
+    """Provider outcome may be ambiguous; reconcile before retrying."""
+
+
 settings = get_settings()
 
 
@@ -45,8 +49,8 @@ def log_notification(db: Session, parent: Parent, student: Student, channel: str
     return notification
 
 
-def send_event_notifications(db: Session, parent: Parent, student: Student, event_type: str, event_id: int, bus_id: int, event_time: datetime) -> None:
-    event_time_label = event_time.strftime("%I:%M %p")
+def send_event_notifications(db: Session, parent: Parent, student: Student, event_type: str, event_id: int, bus_id: int, event_time: datetime, *, strict_delivery: bool = False) -> bool:
+    event_time_label = event_time.strftime("%Y-%m-%d %H:%M %Z")
     title = "Bus Alert"
     body = f"{student.name} {('boarded' if event_type == 'BOARDED' else 'alighted')} the bus at {event_time_label}"
     payload = {
@@ -74,9 +78,11 @@ def send_event_notifications(db: Session, parent: Parent, student: Student, even
             )
             response = messaging.send(message)
             log_notification(db, parent, student, "PUSH", "SENT", response)
-            return
+            return True
         except Exception as exc:  # fallback to SMS on error
             log_notification(db, parent, student, "PUSH", "FAILED", str(exc))
+            if strict_delivery:
+                raise NotificationDeliveryUncertain("Push delivery requires reconciliation") from exc
 
     client = _sms_client()
     if client and parent.phone:
@@ -87,12 +93,15 @@ def send_event_notifications(db: Session, parent: Parent, student: Student, even
                 to=parent.phone,
             )
             log_notification(db, parent, student, "SMS", "SENT", str(resp.sid))
-            return
+            return True
         except Exception as exc:
             log_notification(db, parent, student, "SMS", "FAILED", str(exc))
-            return
+            if strict_delivery:
+                raise NotificationDeliveryUncertain("SMS delivery requires reconciliation") from exc
+            return False
 
     log_notification(db, parent, student, "SMS", "FAILED", "No push token or SMS provider configured")
+    return False
 
 
 def notify_parents_for_event(db: Session, student: Student, bus_id: int, event_type: str, event_id: int, event_time: datetime) -> None:

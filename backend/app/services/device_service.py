@@ -21,14 +21,15 @@ def validate_device_api_key(db: Session, api_key: str) -> Device:
     return device
 
 
-def save_bus_location(db: Session, bus_id: int, lat: float, lng: float, speed: float | None, heading: float | None, gps_time: datetime | None) -> BusLocation:
+def save_bus_location(db: Session, bus_id: int, lat: float, lng: float, speed: float | None, heading: float | None, gps_time: datetime | None, accuracy_m: float | None = None) -> BusLocation:
     location = BusLocation(
         bus_id=bus_id,
         lat=lat,
         lng=lng,
         speed=speed,
         heading=heading,
-        gps_time=gps_time,
+        gps_time=(gps_time.astimezone(timezone.utc).replace(tzinfo=None) if gps_time and gps_time.tzinfo else gps_time),
+        accuracy_m=accuracy_m,
         server_time=datetime.now(timezone.utc),
     )
     db.add(location)

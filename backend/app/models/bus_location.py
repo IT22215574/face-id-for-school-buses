@@ -17,6 +17,7 @@ class BusLocation(Base):
     bus_id: Mapped[int] = mapped_column(ForeignKey("buses.id"), nullable=False, index=True)
     lat: Mapped[float] = mapped_column(Float, nullable=False)
     lng: Mapped[float] = mapped_column(Float, nullable=False)
+    accuracy_m: Mapped[float | None] = mapped_column(Float, nullable=True)
     speed: Mapped[float | None] = mapped_column(Float, nullable=True)
     heading: Mapped[float | None] = mapped_column(Float, nullable=True)
     gps_time: Mapped[datetime | None] = mapped_column(nullable=True)

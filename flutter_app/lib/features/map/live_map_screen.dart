@@ -319,6 +319,7 @@ class _LiveMapScreenState extends ConsumerState<LiveMapScreen>
             ? position.heading
             : null,
         'gps_time': position.timestamp.toUtc().toIso8601String(),
+        'accuracy_m': position.accuracy,
       });
       if (mounted && _sharing && session == _session) {
         _lastUpload = DateTime.now();

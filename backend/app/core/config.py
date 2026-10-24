@@ -26,6 +26,16 @@ class Settings(BaseSettings):
     # Serial -> bus_id, timezone, enrolled PIN -> student_id. Empty disables ADMS.
     ZKTECO_DEVICES_JSON: str = "{}"
 
+    FACE_ADAPTER_TOKEN: str = ""
+    FACE_RAW_ENCRYPTION_KEY: str = ""
+    FACE_GPS_MAX_AGE_SECONDS: int = 120
+    FACE_GPS_MAX_ACCURACY_M: float = 100.0
+    FACE_SCAN_DEBOUNCE_SECONDS: int = 10
+    FACE_DELAY_SECONDS: int = 300
+    FACE_CLOCK_FUTURE_SECONDS: int = 120
+    FACE_MODE_GUARD_SECONDS: int = 30
+    FACE_RAW_RETENTION_DAYS: int = 30
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8", case_sensitive=True)
 
 

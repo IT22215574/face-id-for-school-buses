@@ -8,6 +8,9 @@ class BusEvent {
     required this.lat,
     required this.lng,
     required this.source,
+    this.receivedAt,
+    this.gpsStatus,
+    this.isDelayed = false,
   });
 
   factory BusEvent.fromJson(Map<String, dynamic> json) {
@@ -20,6 +23,11 @@ class BusEvent {
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       source: json['source'] as String? ?? 'DEVICE',
+      receivedAt: json['received_at'] == null
+          ? null
+          : DateTime.parse(json['received_at'] as String),
+      gpsStatus: json['gps_status'] as String?,
+      isDelayed: json['is_delayed'] == true,
     );
   }
 
@@ -31,4 +39,7 @@ class BusEvent {
   final double? lat;
   final double? lng;
   final String source;
+  final DateTime? receivedAt;
+  final String? gpsStatus;
+  final bool isDelayed;
 }

@@ -65,7 +65,13 @@ class StudentJourney extends ConsumerWidget {
                       : 'Dropped off'),
                   subtitle: Text(
                       TimeOfDay.fromDateTime(event.eventTime.toLocal())
-                          .format(context)),
+                              .format(context) +
+                          (event.isDelayed
+                              ? '\nDelayed upload · original scan time shown'
+                              : '') +
+                          (event.gpsStatus == null
+                              ? ''
+                              : '\nGPS: ${event.gpsStatus}')),
                 ),
               const Text('Recorded scans · updates every 10 seconds',
                   style: TextStyle(color: busMuted, fontSize: 12)),

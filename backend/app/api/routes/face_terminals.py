@@ -44,7 +44,7 @@ class MachineIn(BaseModel):
 
 
 def machine_json(machine):
-    return {"serial": machine.serial, "role": machine.role, "model": machine.model,
+    return {"id": machine.id, "adapter_managed": machine.adapter_managed, "serial": machine.serial, "role": machine.role, "model": machine.model,
             "timezone": machine.timezone, "students": machine.students,
             "last_seen_at": machine.last_seen_at.isoformat() + "Z" if machine.last_seen_at else None}
 
@@ -67,6 +67,8 @@ def save_machine(role: Role, payload: MachineIn, current_user=Depends(require_pa
     if payload.serial in json.loads(get_settings().ZKTECO_DEVICES_JSON):
         raise HTTPException(409, "Serial already exists in server configuration; ask your administrator to migrate it")
     machine = db.query(FaceTerminal).filter_by(bus_id=bus.id, role=role).first()
+    if machine and machine.adapter_managed:
+        raise HTTPException(409, "Terminal is managed through administrator receiver integration")
     if machine and machine.serial != payload.serial:
         raise HTTPException(409, "Remove the current machine before registering a replacement")
     claimed = db.query(FaceTerminal).filter_by(serial=payload.serial).first()
@@ -94,6 +96,11 @@ def remove_machine(role: Role, current_user=Depends(require_parent), db: Session
     bus = assigned_driver_bus(current_user, db)
     machine = db.query(FaceTerminal).filter_by(bus_id=bus.id, role=role).first()
     if machine:
+        if machine.adapter_managed:
+            raise HTTPException(409, "Disable managed terminals through administration")
+        from app.models.face_ingestion import FaceInbox, FaceEnrollment, FaceDirection
+        if any(db.query(model.id).filter_by(device_id=machine.id).first() for model in (FaceInbox, FaceEnrollment, FaceDirection)):
+            raise HTTPException(409, "Terminal has integration history; ask administrator to disable it")
         db.delete(machine)
         db.commit()
     return {"message": "Machine removed; recorded attendance retained"}

@@ -46,7 +46,7 @@ def ingest_bus_location(payload: DeviceLocationIn, device: Device = Depends(requ
     bus = db.get(Bus, payload.bus_id)
     if bus is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Bus not found")
-    location = save_bus_location(db, payload.bus_id, payload.lat, payload.lng, payload.speed, payload.heading, payload.gps_time)
+    location = save_bus_location(db, payload.bus_id, payload.lat, payload.lng, payload.speed, payload.heading, payload.gps_time, payload.accuracy_m)
     return {"message": "Location processed", "location_id": location.id}
 
 

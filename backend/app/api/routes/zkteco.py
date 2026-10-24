@@ -28,6 +28,10 @@ def terminal(request: Request, db: Session):
     serial = request.query_params.get("SN", "")
     machine = db.query(FaceTerminal).filter_by(serial=serial).first()
     if machine:
+        if machine.adapter_managed:
+            raise HTTPException(409, "Use the isolated attendance receiver for this terminal")
+        if not machine.enabled:
+            raise HTTPException(403, "Terminal disabled")
         return serial, {"bus_id": machine.bus_id, "timezone": machine.timezone,
                         "students": machine.students,
                         "fixed_event_type": "BOARDED" if machine.role == "ENTRY" else "ALIGHTED"}, machine

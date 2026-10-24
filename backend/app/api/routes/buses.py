@@ -17,6 +17,7 @@ router = APIRouter(tags=["Buses"])
 
 
 class PhoneLocationIn(BaseModel):
+    accuracy_m: float | None = Field(default=None, ge=0, allow_inf_nan=False)
     lat: float = Field(ge=-90, le=90, allow_inf_nan=False)
     lng: float = Field(ge=-180, le=180, allow_inf_nan=False)
     speed: float | None = Field(default=None, ge=0, allow_inf_nan=False)
@@ -43,7 +44,7 @@ def read_driver_bus(current_user=Depends(require_parent), db: Session = Depends(
 @router.post("/driver/location")
 def share_phone_location(payload: PhoneLocationIn, current_user=Depends(require_parent), db: Session = Depends(get_db)):
     bus = assigned_driver_bus(current_user, db)
-    location = save_bus_location(db, bus.id, payload.lat, payload.lng, payload.speed, payload.heading, payload.gps_time)
+    location = save_bus_location(db, bus.id, payload.lat, payload.lng, payload.speed, payload.heading, payload.gps_time, payload.accuracy_m)
     return {"location_id": location.id, "bus_id": bus.id, "server_time": location.server_time}
 
 

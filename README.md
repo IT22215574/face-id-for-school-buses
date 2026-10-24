@@ -178,3 +178,7 @@ npm run dev
 With the backend running on port 8000, open http://localhost:5173/admin-web/.
 For the backend to serve the website directly, run `npm run build` in `admin-web`, restart the API, and open http://localhost:8000/admin-web/.
 See [admin-web/README.md](admin-web/README.md) for configuration and deployment details.
+
+### ZKTeco receiver adapter (hardware verification pending)
+
+The durable receiver adapter, device/enrollment administration and attendance monitoring are documented in [docs/zkteco/README.md](docs/zkteco/README.md). See the [architecture and file plan](docs/zkteco/implementation.md). This is separate from the legacy direct `/iclock` path. Exact M2F PRO-LR firmware compatibility and an end-to-end physical scan still require verification.

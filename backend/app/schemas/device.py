@@ -21,6 +21,7 @@ class DeviceEventIn(BaseModel):
 
 
 class DeviceLocationIn(BaseModel):
+    accuracy_m: FiniteFloat | None = Field(default=None, ge=0)
     bus_id: int
     lat: float
     lng: float

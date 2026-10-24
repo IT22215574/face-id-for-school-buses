@@ -29,7 +29,7 @@ class MachinesScreen extends ConsumerWidget {
                     style: Theme.of(context).textTheme.titleLarge),
                 const SizedBox(height: 12),
                 const Text(
-                    'Register one machine at each door. Scans at the boarding machine record “Got on”; scans at the exit machine record “Dropped off”.'),
+                    'Use an administrator-confirmed enrollment mapping. For a single terminal, set the direction before scanning. Buffered scans near mode changes require administrator review.'),
                 for (final role in ['ENTRY', 'EXIT'])
                   Builder(builder: (context) {
                     final matches = (data['machines'] as List)
@@ -58,15 +58,52 @@ class MachinesScreen extends ConsumerWidget {
                                     Text(machine['last_seen_at'] == null
                                         ? 'Waiting for first connection'
                                         : 'Last connected: ${DateTime.parse(machine['last_seen_at'] as String).toLocal()}'),
+                                  if (machine != null)
+                                    Wrap(children: [
+                                      for (final direction in [
+                                        'BOARDED',
+                                        'ALIGHTED'
+                                      ])
+                                        TextButton(
+                                            onPressed: () async {
+                                              try {
+                                                await ref
+                                                    .read(apiClientProvider)
+                                                    .dio
+                                                    .post(
+                                                        '/face-devices/${machine['id']}/direction',
+                                                        data: {
+                                                      'event_type': direction
+                                                    });
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(SnackBar(
+                                                          content: Text(
+                                                              '$direction mode set. Scans near this change require review.')));
+                                                }
+                                              } catch (_) {
+                                                if (context.mounted) {
+                                                  ScaffoldMessenger.of(context)
+                                                      .showSnackBar(const SnackBar(
+                                                          content: Text(
+                                                              'Unable to change direction. Please retry.')));
+                                                }
+                                              }
+                                            },
+                                            child: Text('Set $direction mode')),
+                                    ]),
                                   const SizedBox(height: 8),
                                   FilledButton(
-                                      onPressed: () => Navigator.of(context)
-                                          .push(MaterialPageRoute<void>(
-                                              builder: (_) => MachineEditor(
-                                                  role: role,
-                                                  machine: machine,
-                                                  students: data['students']
-                                                      as List))),
+                                      onPressed: machine?['adapter_managed'] ==
+                                              true
+                                          ? null
+                                          : () => Navigator.of(context).push(
+                                              MaterialPageRoute<void>(
+                                                  builder: (_) => MachineEditor(
+                                                      role: role,
+                                                      machine: machine,
+                                                      students: data['students']
+                                                          as List))),
                                       child: Text(machine == null
                                           ? 'Register machine'
                                           : 'Edit student IDs')),
@@ -74,7 +111,7 @@ class MachinesScreen extends ConsumerWidget {
                   }),
                 const SizedBox(height: 20),
                 const Text(
-                    'On both machines, set Cloud Server Address to your backend host and use the backend port (8000 for local testing). Enroll faces on each machine, then enter their enrolled user IDs here. Registering here does not enroll faces on the device.'),
+                    'An administrator must configure the separate receiver and confirm firmware compatibility. Enroll faces directly on the terminal. Registering a machine here does not enroll faces or confirm compatibility.'),
                 TextButton(
                     onPressed: () => ref.invalidate(busMachinesProvider),
                     child: const Text('Refresh connection status')),

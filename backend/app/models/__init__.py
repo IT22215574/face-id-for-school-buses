@@ -42,3 +42,5 @@ from app.models.student_transport import StudentTransport
 from app.models.face_terminal import FaceTerminal
 
 from app.models.driver_registration import DriverRegistration
+
+from app.models.face_ingestion import FaceEnrollment, FaceDirection, FaceInbox, FaceNotificationJob

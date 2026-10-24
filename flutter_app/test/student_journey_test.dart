@@ -31,6 +31,8 @@ void main() {
                     'event_time': when.toIso8601String(),
                     'lat': null,
                     'lng': null,
+                    'is_delayed': true,
+                    'gps_status': 'UNAVAILABLE',
                     'source': 'ZK:test'
                   },
                   if (reads > 1)
@@ -55,6 +57,8 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Got on the bus'), findsOneWidget);
     expect(find.text('Dropped off'), findsNothing);
+    expect(find.textContaining('Delayed upload'), findsOneWidget);
+    expect(find.textContaining('GPS: UNAVAILABLE'), findsOneWidget);
     expect(find.textContaining('Sample'), findsNothing);
     await tester.pump(const Duration(seconds: 10));
     await tester.pumpAndSettle();

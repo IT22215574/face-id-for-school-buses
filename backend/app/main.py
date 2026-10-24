@@ -7,6 +7,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from slowapi import _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 
+from app.api.routes.face_admin import router as face_admin_router
 from app.api.routes.admin import router as admin_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.buses import router as buses_router
@@ -47,6 +48,7 @@ app.include_router(face_terminals_router)
 app.include_router(emergency_router)
 app.include_router(payroll_router)
 app.include_router(admin_router)
+app.include_router(face_admin_router)
 app.include_router(ws_router)
 
 admin_web = Path(__file__).resolve().parents[2] / 'admin-web' / 'dist'

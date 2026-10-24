@@ -32,5 +32,14 @@ class Event(Base):
     ingestion_key: Mapped[str | None] = mapped_column(String(64), nullable=True, unique=True)
     created_at: Mapped[datetime] = mapped_column(default=lambda: datetime.now(timezone.utc), nullable=False)
 
+    source_device_id: Mapped[int | None] = mapped_column(ForeignKey("face_terminals.id"))
+    received_at: Mapped[datetime | None]
+    direction_source: Mapped[str | None] = mapped_column(String(30))
+    gps_accuracy_m: Mapped[float | None] = mapped_column(Float, nullable=True)
+    gps_status: Mapped[str | None] = mapped_column(String(20))
+    gps_timestamp: Mapped[datetime | None]
+    gps_source: Mapped[str | None] = mapped_column(String(30))
+    is_delayed: Mapped[bool | None]
+
     student: Mapped["Student"] = relationship(back_populates="events")
     bus: Mapped["Bus"] = relationship(back_populates="events")

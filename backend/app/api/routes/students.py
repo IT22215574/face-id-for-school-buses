@@ -57,4 +57,6 @@ def list_student_events(
              "event_time": (event.event_time.replace(tzinfo=timezone.utc)
                             if event.event_time.tzinfo is None else event.event_time).isoformat(),
              "lat": event.lat, "lng": event.lng, "confidence": event.confidence,
-             "source": event.source} for event in events]
+             "source": event.source, "received_at": event.received_at.isoformat() + "Z" if event.received_at else None,
+             "gps_status": event.gps_status, "is_delayed": event.is_delayed,
+             "direction_source": event.direction_source} for event in events]

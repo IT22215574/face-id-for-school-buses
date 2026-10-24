@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../providers/auth_provider.dart';
 import '../auth/sign_out.dart';
+import 'face_devices_screen.dart';
 
 class AdminScreen extends ConsumerStatefulWidget {
   const AdminScreen({super.key});
@@ -303,6 +304,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> {
                 : ListView(
                     padding: const EdgeInsets.fromLTRB(20, 20, 20, 100),
                     children: [
+                        ListTile(
+                            leading: const Icon(Icons.face),
+                            title: const Text('Face Recognition Devices'),
+                            onTap: () => Navigator.of(context).push(
+                                MaterialPageRoute<void>(
+                                    builder: (_) =>
+                                        const FaceDevicesScreen()))),
                         Text('Drivers & bus assignments',
                             style: Theme.of(context).textTheme.headlineSmall),
                         const SizedBox(height: 8),
